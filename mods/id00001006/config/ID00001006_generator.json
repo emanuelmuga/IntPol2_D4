@@ -1,0 +1,51 @@
+{
+    "ipdata": {
+        "comment": "00001006",
+        "enom": "00001006",
+        "ipid": "00001006"
+    },
+    "memories": {
+        "cfgReg": {
+            "comment": "CONFREG",
+            "enom": "CCONFREG",
+            "size": "4",
+            "val": "5'b00100"
+        },
+        "memIn": [
+            {
+                "comment": "MEMIN",
+                "enom": "MMEMIN",
+                "size": "4",
+                "val": "5'b00000"
+            }
+        ],
+        "memInStream": {
+        },
+        "memOut": [
+            {
+                "comment": "MEMOUT",
+                "enom": "MMEMOUT",
+                "size": "128",
+                "val": "5'b00010"
+            }
+        ],
+        "memOutStream": {
+        }
+    },
+    "regs": {
+        "reg1": "",
+        "reg10": "AFull",
+        "reg11": "Error_CFG",
+        "reg12": "Current_Mode",
+        "reg13": "Current_Mode",
+        "reg14": "",
+        "reg15": "",
+        "reg2": "",
+        "reg3": "",
+        "reg4": "",
+        "reg5": "",
+        "reg6": "",
+        "reg7": "",
+        "reg9": "Empty"
+    }
+}

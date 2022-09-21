@@ -1,0 +1,93 @@
+module IPm_IPCore
+#(
+    parameter CONF_WIDTH = 5,
+    parameter DATA_WIDTH = 32
+)
+(
+    // Main
+    input clk,
+    input rst,
+    
+    // MCU
+    input [3:0] addressMCU,
+    input rstMCU,
+    input rdMCU,
+    input wrMCU,
+    inout [7:0] dataMCU,
+    output intMCU
+);
+
+    wire wireReset;
+    wire [DATA_WIDTH-1:0] wireDataIPtoMCU;
+    wire [DATA_WIDTH-1:0] wireDataMCUtoIP;
+    wire [CONF_WIDTH-1:0] wireConf;
+    wire wireReadIP;
+    wire wireWriteIP;
+    wire wireStartIP;
+    wire wireINT;
+    
+    assign wireReset = rst & rstMCU;
+
+    IPm IPM
+    (
+        .clk_n_Hz(clk),
+        .ipm_RstIn(wireReset),
+        
+        // MCU
+        .ipmMCUDataInout(dataMCU),
+        .ipmMCUAddrsIn(addressMCU),
+        .ipmMCURdIn(rdMCU),
+        .ipmMCUWrIn(wrMCU),
+        .ipmMCUINTOut(intMCU),
+        
+        // IP
+        .ipmPIPDataIn(wireDataIPtoMCU),
+        .ipmPIPConfOut(wireConf),
+        .ipmPIPReadOut(wireReadIP),
+        .ipmPIPWriteOut(wireWriteIP),
+        .ipmPIPStartOut(wireStartIP),
+        .ipmPIPDataOut(wireDataMCUtoIP),
+        .ipmPIPINTIn(wireINT)
+    );
+
+    IPCorewNoCInterface
+    #(
+        ...
+    )
+    IPCORE
+    (
+        .clk(clk),
+        .rst_a(wireReset),
+        .en_s(1'b1),
+        .data_in(wireDataMCUtoIP),
+        .data_out(wireDataIPtoMCU),
+        .write(wireWriteIP),
+        .read(wireReadIP),
+        .start(wireStartIP),
+        .conf_dbus(wireConf),
+        .int_req(wireINT)
+    );
+
+endmodule
+
+### Asignacion de pines ###
+set_location_assignment PIN_Y2 -to clk
+set_location_assignment PIN_M23 -to rst
+
+set_location_assignment PIN_AE25 -to dataMCU[7]
+set_location_assignment PIN_AD25 -to dataMCU[6]
+set_location_assignment PIN_AD22 -to dataMCU[5]
+set_location_assignment PIN_AF21 -to dataMCU[4]
+set_location_assignment PIN_AC22 -to dataMCU[3]
+set_location_assignment PIN_AE21 -to dataMCU[2]
+set_location_assignment PIN_AF15 -to dataMCU[1]
+set_location_assignment PIN_AF16 -to dataMCU[0]
+set_location_assignment PIN_AC19 -to addressMCU[0]
+set_location_assignment PIN_AD19 -to addressMCU[1]
+set_location_assignment PIN_AF24 -to addressMCU[2]
+set_location_assignment PIN_AF25 -to addressMCU[3]
+set_location_assignment PIN_AE16 -to rdMCU
+set_location_assignment PIN_AE15 -to wrMCU
+set_location_assignment PIN_Y16 -to rstMCU
+set_location_assignment PIN_AE24 -to intMCU
+
