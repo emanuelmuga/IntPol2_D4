@@ -1,0 +1,12 @@
+/db
+/incremental_db
+/output_files
+/mods/id00001006/hdl/sim/modelsim
+/simulation
+*.qpf
+*.qsf
+*.qws
+*.bak
+*.wlf
+*.mpf
+*.mti
