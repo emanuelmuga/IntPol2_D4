@@ -1,7 +1,5 @@
 module intpol2_D4_Controlpath #(
-    parameter   DATA_WIDTH  =  32, 
-    parameter   MEM_SIZE_Y  = $clog2(128),
-    parameter   MEM_SIZE_M  = $clog2(4)
+    parameter   DATA_WIDTH  =  32
 )(
     input                                 clk, 
     input                                 rstn, 
@@ -9,13 +7,12 @@ module intpol2_D4_Controlpath #(
     input                                 mode,
     input                                 Empty_i,
     input                                 Afull_i,
-    input              [MEM_SIZE_Y:0]     ilen,
+    input              [DATA_WIDTH:0]     ilen,
     input                                 bypass,    
     output wire                           Ld_M0,
     output wire                           Ld_M1,
     output wire                           Ld_M2,
     output wire             [1:0]         sel_xi2,
-    output wire                           Write_bypass_Y,
     output wire                           FIFO_bypass,
     output wire                           busy,
     output wire                           Write_Enable_w,
@@ -40,9 +37,7 @@ wire en_M_addr;
 
 
 intpol2_D4_nxt_ste_lgc#(
-    .DATA_WIDTH     ( DATA_WIDTH     ),
-    .MEM_SIZE_Y     ( MEM_SIZE_Y     ),
-    .MEM_SIZE_M     ( MEM_SIZE_M     )
+    .DATA_WIDTH     ( DATA_WIDTH     )
 )next_state_logic(
     .clk            ( clk            ),
     .rstn           ( rstn           ),
@@ -58,12 +53,10 @@ intpol2_D4_nxt_ste_lgc#(
     .done           ( done           ),
     .ilen           ( ilen           ),
     .comp_cnt       ( comp_cnt       ),
-    .comp_addr      ( comp_addr      ),
     .Ld_M0          ( Ld_M0          ),
     .Ld_M1          ( Ld_M1          ),
     .Ld_M2          ( Ld_M2          ),
     .sel_xi2        ( sel_xi2        ),
-    .Write_bypass_Y ( Write_bypass_Y ),
     .FIFO_bypass    ( FIFO_bypass    )
 );
 
@@ -79,7 +72,6 @@ intpol2_D4_fsm FSM(
     .Empty        ( Empty_i        ),
     .bypass       ( bypass         ),
     .comp_cnt     ( comp_cnt       ),
-    .comp_addr    ( comp_addr      ),
     .busy         ( busy           ),
     .Write_Enable ( Write_Enable_w ),
     .Read_Enable  ( Read_Enable_w  ),

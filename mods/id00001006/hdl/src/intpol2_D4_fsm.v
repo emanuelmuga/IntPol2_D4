@@ -33,8 +33,7 @@ localparam [3:0] IDLE = 4'h0,
                  S6   = 4'h6,
             S_CLEAR   = 4'h7,
            S_STREAM   = 4'h8,
-       S_BYPSS_STRM   = 4'h9,
-      S_BYPSS_ACCEL   = 4'hA;
+       S_BYPSS_STRM   = 4'h9;
                  
 
 
@@ -84,12 +83,7 @@ next_state    <= IDLE;
                 sel_mult      <= 1'b0;
                 if(start) begin
                      if(bypass)begin
-                        if(mode)begin
-                            next_state <= S_BYPSS_STRM;
-                        end
-                        else begin
-                            next_state <= S1;
-                        end
+                        next_state <= S_BYPSS_STRM;
                     end
                     else begin
                         next_state <= S1;
@@ -140,12 +134,7 @@ next_state    <= IDLE;
                 end    
                 else begin
                     if(comp_addr)
-                        if(bypass) begin
-                            next_state <= S_BYPSS_ACCEL;
-                        end
-                        else begin
-                            next_state <= S2; 
-                        end
+                        next_state <= S2; 
                     else
                         next_state <= S1;
                 end                 
@@ -211,26 +200,12 @@ next_state    <= IDLE;
                     next_state <= S_CLEAR;
                 end    
                 else begin
-                    if(mode) begin
-                        if(Afull) begin 
-                            en_sum         <= 1'b0;                 
-                            Write_Enable   <= 1'b0;
-                            stop_Afull     <= 1'b1;  
-                            next_state     <= S4;
-                        end
-                        else begin
-                            Write_Enable   <= 1'b1; //<--
-                            stop_Afull     <= 1'b0;
-                            if(comp_cnt) begin
-                                en_sum     <= 1'b0;
-                                next_state <= S5;
-                            end  
-                            else begin
-                                en_sum     <= 1'b1; //<--
-                                next_state <= S3;                
-                            end   
-                        end
-                    end 
+                    if(Afull) begin 
+                        en_sum         <= 1'b0;                 
+                        Write_Enable   <= 1'b0;
+                        stop_Afull     <= 1'b1;  
+                        next_state     <= S4;
+                    end
                     else begin
                         Write_Enable   <= 1'b1; //<--
                         stop_Afull     <= 1'b0;
@@ -241,7 +216,7 @@ next_state    <= IDLE;
                         else begin
                             en_sum     <= 1'b1; //<--
                             next_state <= S3;                
-                        end
+                        end   
                     end
                 end                               
             end  
@@ -264,12 +239,7 @@ next_state    <= IDLE;
                     next_state <= S_CLEAR;
                 end    
                 else begin
-                    if(mode) begin
-                        next_state <= S_STREAM;
-                    end
-                    else begin                
-                        next_state <= IDLE;
-                    end  
+                    next_state <= S_STREAM;
                 end                               
             end 
      S_STREAM:
@@ -316,21 +286,6 @@ next_state    <= IDLE;
                 else begin
                     next_state <= S2;
                 end 
-            end  
-        S_BYPSS_ACCEL:  
-            begin
-                en_sum        <= 1'b0;
-                en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
-                done          <= 1'b1; //<--
-                busy          <= 1'b1; //<--
-                Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0;                 
-                op_1          <= 1'b0;
-                en_stream     <= 1'b0;
-                stop_empty    <= 1'b0;
-                stop_Afull    <= 1'b0;
-                next_state    <= IDLE;                                          
             end                    
         S_BYPSS_STRM:  
             begin

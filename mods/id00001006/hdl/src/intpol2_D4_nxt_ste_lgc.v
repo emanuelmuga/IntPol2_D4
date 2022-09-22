@@ -29,15 +29,14 @@ wire                    fifo_bypass_en;
 reg    [DATA_WIDTH:0]   cnt;
 reg    [SIZE_M-1:0]     M_cnt;             //contador para lectura de memoria M
 reg                     fifo_bypass_ff;
-reg                     Read_Enable_ff; 
 
 assign comp_cnt  =  (cnt < ilen-1)              ? 1'b0 : 1'b1;
-assign comp_addr =  (M_cnt == 2'b11)            ? 1'b1 : 1'b0;
-
 
 assign Ld_M0     =  (M_cnt == 2'b01) ? 1'b1 : 1'b0;
 assign Ld_M1     =  (M_cnt == 2'b10) ? 1'b1 : 1'b0;
 assign Ld_M2     =  (M_cnt == 2'b11) ? 1'b1 : 1'b0;
+
+assign comp_addr = Ld_M2;
 
 assign sel_xi2   =  (cnt < 2'b11) ?  (cnt[1:0]+1) : 2'b11; 
 
@@ -47,7 +46,6 @@ always @(posedge clk or negedge rstn or posedge clear) begin
     if(~rstn || clear) begin
         cnt             = {DATA_WIDTH{1'b0}};
         M_cnt           = {SIZE_M{1'b0}};
-        Y_addr_bypass  <= {SIZE_M{1'b0}};
         FIFO_bypass    <= 1'b0;
     end
     else begin       
@@ -69,10 +67,6 @@ always @(posedge clk or negedge rstn or posedge clear) begin
 
         FIFO_bypass    = fifo_bypass_ff;
     end
-end
-
-always @(Read_Enable) begin
-    Read_Enable_ff <= Read_Enable; 
 end
 
 always @(fifo_bypass_en) begin

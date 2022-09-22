@@ -65,9 +65,12 @@ module intpol2_D4_IQ_CORE #(
     output wire signed [DATA_WIDTH-1:0] Q_interp                // Result Q                                            
 );
 
-wire        [MEM_SIZE_Y:0]   ilen;
+wire        [DATA_WIDTH:0]   ilen;
 wire        [DATA_WIDTH-1:0] iX;  
 wire        [DATA_WIDTH-1:0] iX2;  
+wire        [DATA_WIDTH-1:0] data_I;
+wire        [DATA_WIDTH-1:0] data_Q;
+
 
 //-----------------------Control signals-----------------------//
 wire                         en_sum;                           //enable del cnt y de la multi por sumatoria.
@@ -105,7 +108,7 @@ assign bypass        = config_reg0[0];
 assign mode          = config_reg0[1];
 assign iX            = config_reg1[31:0];
 assign iX2           = config_reg2[31:0];
-assign ilen          = config_reg3[MEM_SIZE_Y:0];
+assign ilen          = config_reg3[DATA_WIDTH-1:0];
 
 assign status_reg[0] = done;
 assign status_reg[1] = busy;
@@ -126,8 +129,7 @@ assign Q_interp          = bypass  ? data_in_from_fifo_Q : data_Q;
 intpol2_D4_Datapath#(
     .DATA_WIDTH      ( DATA_WIDTH ),
     .N_bits          ( N_bits     ),
-    .M_bits          ( M_bits     ),
-    .MEM_SIZE_Y      ( MEM_SIZE_Y )
+    .M_bits          ( M_bits     )
 )Datapath_I(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
@@ -151,8 +153,7 @@ intpol2_D4_Datapath#(
 intpol2_D4_Datapath#(
     .DATA_WIDTH      ( DATA_WIDTH ),
     .N_bits          ( N_bits     ),
-    .M_bits          ( M_bits     ),
-    .MEM_SIZE_Y      ( MEM_SIZE_Y )
+    .M_bits          ( M_bits     )
 )Datapath_Q(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
@@ -175,9 +176,7 @@ intpol2_D4_Datapath#(
     
 
 intpol2_D4_Controlpath#(
-    .DATA_WIDTH     ( DATA_WIDTH     ),
-    .MEM_SIZE_Y     ( MEM_SIZE_Y     ),
-    .MEM_SIZE_M     ( MEM_SIZE_M     )
+    .DATA_WIDTH     ( DATA_WIDTH     )
 )Controlpath(
     .clk            ( clk            ),
     .rstn           ( rstn           ),
@@ -187,13 +186,10 @@ intpol2_D4_Controlpath#(
     .Afull_i        ( Afull_i        ),
     .ilen           ( ilen           ),
     .bypass         ( bypass         ),
-    .Y_addr         ( Y_addr         ),
-    .Y_addr_bypass  ( Y_addr_bypass  ),
     .Ld_M0          ( Ld_M0          ),
     .Ld_M1          ( Ld_M1          ),
     .Ld_M2          ( Ld_M2          ),
     .sel_xi2        ( sel_xi2        ),
-    .Write_bypass_Y ( Write_bypass_Y ),
     .FIFO_bypass    ( FIFO_bypass    ),
     .busy           ( busy           ),
     .Write_Enable_w ( Write_Enable_w ),
