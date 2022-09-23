@@ -25,7 +25,6 @@
                     MEM_SIZE_M                    Tamaño de memoria de entrada
                     -------------------------------------------------------------
     Config_reg    : bypass = config_reg0[0];                                  
-                    mode   = config_reg0[1];                            
                     iX     = config_reg1[31:0];  Factor de interpolacion  
                     iX     = config_reg2[31:0];  Factor de interpolacion^2          
                     ilen   = config_reg3[7:0];   Duración de iteración LENGHT 
@@ -36,7 +35,6 @@
                      status_reg[1] = busy;
                      status_reg[2] = stop_empty;
                      status_reg[3] = stop_Afull;
-                     status_reg[4] = mode;
                      status_reg[5] = bypass;                      
 -------------------------------------------------------------------------------------------------
     Version        : 1.0
@@ -105,7 +103,6 @@ assign config_reg2 = config_reg[DATA_WIDTH*3-1:DATA_WIDTH*2];
 assign config_reg3 = config_reg[DATA_WIDTH*4-1:DATA_WIDTH*3];
 
 assign bypass        = config_reg0[0];
-assign mode          = config_reg0[1];
 assign iX            = config_reg1[31:0];
 assign iX2           = config_reg2[31:0];
 assign ilen          = config_reg3[DATA_WIDTH-1:0];
@@ -114,7 +111,6 @@ assign status_reg[0] = done;
 assign status_reg[1] = busy;
 assign status_reg[2] = stop_empty;
 assign status_reg[3] = stop_Afull;
-assign status_reg[4] = mode;
 assign status_reg[5] = bypass;  
 
 //-------------------------------------------------------------//
@@ -181,7 +177,6 @@ intpol2_D4_Controlpath#(
     .clk            ( clk            ),
     .rstn           ( rstn           ),
     .start          ( start          ),
-    .mode           ( mode           ),
     .Empty_i        ( Empty_i        ),
     .Afull_i        ( Afull_i        ),
     .ilen           ( ilen           ),

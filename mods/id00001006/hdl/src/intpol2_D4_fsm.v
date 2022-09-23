@@ -2,7 +2,6 @@ module intpol2_D4_fsm(
     input       clk, 
     input       rstn, 
     input       start,
-    input       mode,
     input       Afull,
     input       Empty, 
     input       bypass,    
@@ -252,7 +251,7 @@ next_state    <= IDLE;
                 Write_Enable  <= 1'b0;                 
                 op_1          <= 1'b0;
                 done          <= 1'b0;
-                en_stream     <= 1'b0;
+                en_stream     <= 1'b1; //<--
                 stop_empty    <= 1'b1;
                 stop_Afull    <= 1'b0;
                 if(start) begin
@@ -263,7 +262,7 @@ next_state    <= IDLE;
                         next_state <= S_STREAM;
                     end    
                     else begin
-                        next_state <= S6;
+                        next_state <= S2;
                     end 
                 end    
             end     

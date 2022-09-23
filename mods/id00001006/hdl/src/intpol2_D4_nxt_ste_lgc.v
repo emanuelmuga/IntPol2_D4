@@ -3,7 +3,6 @@ module intpol2_D4_nxt_ste_lgc#(
 )(
     input                                 clk, rstn,
     input                                 clear, 
-    input                                 mode,   
     input                                 Empty,
     input                                 Afull,
     input                                 busy,    
