@@ -9,8 +9,8 @@ module intpol2_D4_fsm(
     input       comp_addr,
     output reg  busy,
     output reg  Write_Enable,
+    output reg  Ld_data,
     output reg  Read_Enable, 
-    output reg  Ld_y,
     output reg  Ld_p1_xi, 
     output reg  en_M_addr, 
     output reg  en_sum,
@@ -29,33 +29,38 @@ localparam [3:0] IDLE = 4'h0,
 				 S3   = 4'h3,
 				 S4   = 4'h4,
                  S5   = 4'h5,
-                 S6   = 4'h6,
-            S_CLEAR   = 4'h7,
-           S_STREAM   = 4'h8,
-       S_BYPSS_STRM   = 4'h9;
+            S_CLEAR   = 4'h6,
+           S_STREAM   = 4'h7,
+       S_BYPSS_STRM   = 4'h8;
                  
 
 
 reg [3:0] state, next_state;   
+reg Ld_ff;
 
 assign clear = (start || done) ? 1'b1 : 1'b0;
 
 always @(posedge clk or negedge rstn) begin
 	if(~rstn) begin
 		state <= IDLE;
+        Write_Enable <= 1'b0; 
 	end	
 	else begin
 		state <= next_state;
+        Write_Enable <= Ld_ff;
 	end
 end	
+
+always @(Ld_data) begin
+    Ld_ff <= Ld_data;
+end
 
 always @(*) begin
 en_sum        <= 1'b0;
 en_M_addr     <= 1'b0;
-Ld_y          <= 1'b0;
 Ld_p1_xi      <= 1'b0;
 Read_Enable   <= 1'b0;
-Write_Enable  <= 1'b0;
+Ld_data       <= 1'b0;
 op_1          <= 1'b0;
 done          <= 1'b0;
 busy          <= 1'b0;
@@ -69,10 +74,9 @@ next_state    <= IDLE;
             begin
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0;
+                Ld_data       <= 1'b0;
                 op_1          <= 1'b0;
                 done          <= 1'b0;
                 busy          <= 1'b0;
@@ -96,10 +100,9 @@ next_state    <= IDLE;
             begin
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0;
+                Ld_data       <= 1'b0;
                 op_1          <= 1'b0;
                 done          <= 1'b0;
                 busy          <= 1'b0;
@@ -117,10 +120,9 @@ next_state    <= IDLE;
         S1:
             begin 
                 en_M_addr     <= 1'b1; //<--
-                Ld_y          <= 1'b0;
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b1; //<--
-                Write_Enable  <= 1'b0;
+                Ld_data       <= 1'b0;
                 op_1          <= 1'b0;
                 done          <= 1'b0;
                 busy          <= 1'b1; //<--
@@ -142,10 +144,9 @@ next_state    <= IDLE;
             begin
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0; 
+                Ld_data       <= 1'b0; 
                 op_1          <= 1'b1; //<--
                 done          <= 1'b0;
                 busy          <= 1'b1; //<--
@@ -164,10 +165,9 @@ next_state    <= IDLE;
             begin 
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 Ld_p1_xi      <= 1'b1; //<--
                 Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0;
+                Ld_data       <= 1'b0;
                 op_1          <= 1'b0;
                 done          <= 1'b0;
                 busy          <= 1'b1; //<--
@@ -185,7 +185,6 @@ next_state    <= IDLE;
         S4:
             begin
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0; 
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b0;
                 op_1          <= 1'b0;
@@ -201,12 +200,12 @@ next_state    <= IDLE;
                 else begin
                     if(Afull) begin 
                         en_sum         <= 1'b0;                 
-                        Write_Enable   <= 1'b0;
+                        Ld_data        <= 1'b0;
                         stop_Afull     <= 1'b1;  
                         next_state     <= S4;
                     end
                     else begin
-                        Write_Enable   <= 1'b1; //<--
+                        Ld_data        <= 1'b1; //<--
                         stop_Afull     <= 1'b0;
                         if(comp_cnt) begin
                             en_sum     <= 1'b0;
@@ -223,10 +222,9 @@ next_state    <= IDLE;
             begin
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0; 
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0; 
+                Ld_data       <= 1'b0; 
                 op_1          <= 1'b0;
                 done          <= 1'b1;   //<--
                 busy          <= 1'b1;   //<--
@@ -246,9 +244,8 @@ next_state    <= IDLE;
                 busy          <= 1'b1; //<--
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 Read_Enable   <= 1'b1; //<--
-                Write_Enable  <= 1'b0;                 
+                Ld_data       <= 1'b0;                 
                 op_1          <= 1'b0;
                 done          <= 1'b0;
                 en_stream     <= 1'b1; //<--
@@ -265,36 +262,15 @@ next_state    <= IDLE;
                         next_state <= S2;
                     end 
                 end    
-            end     
-        S6:
-            begin
-                busy          <= 1'b1; //<--
-                en_sum        <= 1'b0; 
-                en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
-                Read_Enable   <= 1'b0;
-                Write_Enable  <= 1'b0;                 
-                op_1          <= 1'b0;  
-                done          <= 1'b0;
-                en_stream     <= 1'b1; //<--
-                stop_empty    <= 1'b0;
-                stop_Afull    <= 1'b0;
-                if(start) begin
-                    next_state <= S_CLEAR;
-                end    
-                else begin
-                    next_state <= S2;
-                end 
-            end                    
+            end                       
         S_BYPSS_STRM:  
             begin
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
-                Ld_y          <= 1'b0;
                 done          <= 1'b0; 
                 busy          <= 1'b1; //<--
                 Read_Enable   <= 1'b1; //<--  
-                Write_Enable  <= 1'b0;               
+                Ld_data       <= 1'b0;               
                 op_1          <= 1'b0;
                 en_stream     <= 1'b0;
                 if(Empty) begin

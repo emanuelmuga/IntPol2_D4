@@ -174,7 +174,7 @@ integer iter;
 
 initial
     begin
-        clk = 0;
+        clk = 1;
         forever clk = #5 ~clk;
     end
 

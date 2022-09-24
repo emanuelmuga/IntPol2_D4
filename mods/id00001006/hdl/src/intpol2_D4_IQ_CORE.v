@@ -68,6 +68,8 @@ wire        [DATA_WIDTH-1:0] iX;
 wire        [DATA_WIDTH-1:0] iX2;  
 wire        [DATA_WIDTH-1:0] data_I;
 wire        [DATA_WIDTH-1:0] data_Q;
+wire        [DATA_WIDTH-1:0] last_I;
+wire        [DATA_WIDTH-1:0] last_Q;
 
 
 //-----------------------Control signals-----------------------//
@@ -75,10 +77,10 @@ wire                         en_sum;                           //enable del cnt 
 wire                         en_stream;
 wire                         op_1;                       
 wire                         sel_mult;                         //selector de entradas del multi_mux
-wire                         Ld_y;                             //Load result y
 wire                         Ld_M0;
 wire                         Ld_M1;
 wire                         Ld_M2;
+wire                         Ld_data;
 wire                         Ld_p1_xi;
 wire                         Read_Enable_w;
 wire                         Write_Enable_w; 
@@ -116,9 +118,11 @@ assign status_reg[5] = bypass;
 //-------------------------------------------------------------//
 
 assign Read_Enable_fifo  = Read_Enable_w;                
-assign Write_Enable_fifo = bypass  ? FIFO_bypass         : Write_Enable_w;                          
-assign I_interp          = bypass  ? data_in_from_fifo_I : data_I;
-assign Q_interp          = bypass  ? data_in_from_fifo_Q : data_Q;
+assign Write_Enable_fifo = bypass            ? FIFO_bypass         : Write_Enable_w;                          
+assign I_interp          = bypass            ? data_in_from_fifo_I :
+                           Write_Enable_w    ? data_I : last_I;
+assign Q_interp          = bypass            ? data_in_from_fifo_Q : 
+                           Write_Enable_w    ? data_Q : last_Q;
 
 //-------------------------------------------------------------//
 
@@ -130,12 +134,12 @@ intpol2_D4_Datapath#(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
     .clear           ( clear               ),
-    .Ld_y            ( Ld_y                ),
     .Ld_M0           ( Ld_M0               ),
     .Ld_M1           ( Ld_M1               ),
     .Ld_M2           ( Ld_M2               ),
     .Ld_p1_xi        ( Ld_p1_xi            ),
     .en_sum          ( en_sum              ),
+    .Ld_data         ( Ld_data             ),
     .en_stream       ( en_stream           ),
     .sel_mult        ( sel_mult            ),
     .op_1            ( op_1                ),
@@ -143,6 +147,7 @@ intpol2_D4_Datapath#(
     .data_to_process ( data_in_from_fifo_I ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
+    .last_value      ( last_I              ),
     .data_out        ( data_I              )
 );
 
@@ -154,19 +159,20 @@ intpol2_D4_Datapath#(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
     .clear           ( clear               ),
-    .Ld_y            ( Ld_y                ),
     .Ld_M0           ( Ld_M0               ),
     .Ld_M1           ( Ld_M1               ),
     .Ld_M2           ( Ld_M2               ),
     .Ld_p1_xi        ( Ld_p1_xi            ),
     .en_sum          ( en_sum              ),
     .en_stream       ( en_stream           ),
+    .Ld_data         ( Ld_data             ),
     .sel_mult        ( sel_mult            ),
     .op_1            ( op_1                ),
     .sel_xi2         ( sel_xi2             ), 
     .data_to_process ( data_in_from_fifo_Q ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
+    .last_value      ( last_Q              ),
     .data_out        ( data_Q              )
 );
     
@@ -188,8 +194,8 @@ intpol2_D4_Controlpath#(
     .FIFO_bypass    ( FIFO_bypass    ),
     .busy           ( busy           ),
     .Write_Enable_w ( Write_Enable_w ),
+    .Ld_data        ( Ld_data        ),
     .Read_Enable_w  ( Read_Enable_w  ),
-    .Ld_y           ( Ld_y           ),
     .Ld_p1_xi       ( Ld_p1_xi       ),
     .en_sum         ( en_sum         ),
     .en_stream      ( en_stream      ),

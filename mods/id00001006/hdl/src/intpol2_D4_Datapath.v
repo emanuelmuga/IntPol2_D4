@@ -6,7 +6,7 @@ module intpol2_D4_Datapath #(
 
 )(
     input                               clk, rstn, clear,
-    input                               Ld_y,
+    input                               Ld_data,
     input                               Ld_M0,
     input                               Ld_M1,
     input                               Ld_M2,
@@ -19,12 +19,16 @@ module intpol2_D4_Datapath #(
     input       signed [DATA_WIDTH-1:0] data_to_process,     
     input       signed [DATA_WIDTH-1:0] x,
     input       signed [DATA_WIDTH-1:0] x2,
+    output reg signed [DATA_WIDTH-1:0]  last_value,
     output wire signed [DATA_WIDTH-1:0] data_out   
 );
     
 reg  signed [DATA_WIDTH+N_bits-1:0] m0;
 reg  signed [DATA_WIDTH+N_bits-1:0] m1;
 reg  signed [DATA_WIDTH+N_bits-1:0] m2;
+
+reg cnt_clk;
+wire Ld_lv;
 
 //-------------------------Coeficientes------------------------//                    
 wire signed [DATA_WIDTH+N_bits-1:0] p1;                           
@@ -53,14 +57,16 @@ assign xi2_w  = {{N_bits{1'b0}},xi2};
 
 assign data_to_process_w = {{N_bits{data_to_process[DATA_WIDTH-1]}},data_to_process};
 
-assign data_out = data_y[DATA_WIDTH-1:0];
+
+assign data_out = last_value;
 
 always @(posedge clk, negedge rstn) begin
     if(!rstn) begin
-        p1_xi    <= {DATA_WIDTH+N_bits{1'b0}};
-        m0       =  {DATA_WIDTH+N_bits{1'b0}};
-        m1       =  {DATA_WIDTH+N_bits{1'b0}};
-        m2       =  {DATA_WIDTH+N_bits{1'b0}};
+        p1_xi      <=  {DATA_WIDTH+N_bits{1'b0}};
+        m0          =  {DATA_WIDTH+N_bits{1'b0}};
+        m1          =  {DATA_WIDTH+N_bits{1'b0}};
+        m2          =  {DATA_WIDTH+N_bits{1'b0}};
+        last_value <=  {DATA_WIDTH{1'b0}};
     end    
     else begin
         // if(Ld_y)      
@@ -77,7 +83,9 @@ always @(posedge clk, negedge rstn) begin
             m2 = {data_to_process_w};
         end
         if(Ld_p1_xi)
-            p1_xi = multi_val;      
+            p1_xi = multi_val; 
+        if(Ld_data)
+            last_value <= data_y[DATA_WIDTH-1:0];     
     end
 end
 
