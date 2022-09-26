@@ -22,8 +22,7 @@ wire Afull_Q_o;
 
 wire Afull_from_DUT;
 
-wire [DATAPATH_WIDTH-1:0] data_in_I;
-wire [DATAPATH_WIDTH-1:0] data_in_Q;
+wire [DATAPATH_WIDTH-1:0] data2interp;
 
 wire [DATAPATH_WIDTH-1:0] I_interp;
 wire [DATAPATH_WIDTH-1:0] Q_interp;
@@ -41,13 +40,14 @@ Source#(
     .rstn       ( rst_a          ),
     .start_i    ( start          ),
     .Afull_i    ( Afull_from_DUT ),
-    .config_reg ( config_reg     ),
+    .config_reg ( config_source  ),
     .data_in    ( data_in        ),
     .WE_fifo_o  ( WE_fifo_o      ),
     .status_reg ( status_reg     ),
     .addr_Mem_o ( addr_Mem_o     ),
-    .data_o     ( data_o         )
+    .data_o     ( data2interp    )
 );
+
 
 
 ID00001006_intpol2_V4_IQ DUT(
@@ -65,14 +65,53 @@ ID00001006_intpol2_V4_IQ DUT(
     .Afull_Q_in     ( Afull_Q_in     ),
     .Write_enable_i ( Write_enable_i ),
     .Write_Enable_o ( Write_Enable_o ),
-    .data_in_I      ( data_in_I      ),
-    .data_in_Q      ( data_in_Q      ),
+    .data_in_I      ( data2interp    ),
+    .data_in_Q      ( data2interp    ),
     .Afull_I_o      ( Afull_I_o      ),
     .Afull_Q_o      ( Afull_Q_o      ),
     .I_interp       ( I_interp       ),
     .Q_interp       ( Q_interp       ),
     .done           ( done           )
 );
+
+
+Sink#(
+    .DATA_WIDTH     ( DATAPATH_WIDTH ),
+    .MEM_SIZE_Y     ( $clog2(256) )
+)SINK_I(
+    .clk            ( clk            ),
+    .rstn           ( rst_a          ),
+    .start_i        ( start_i        ),
+    .Empty_i        ( Empty_i        ),
+    .data_depth     ( data_depth     ),
+    .data_in        ( I_interp       ),
+    .Read_Enable_o  ( Read_Enable_o  ),
+    .addr_Mem_o     ( addr_Mem_o     ),
+    .Write_Enable_o ( Write_Enable_o ),
+    .data_out       ( data_out       ),
+    .done           ( done           )
+);
+
+Sink#(
+    .DATA_WIDTH     ( DATAPATH_WIDTH ),
+    .MEM_SIZE_Y     ( $clog2(256) )
+)SINK_Q(
+    .clk            ( clk            ),
+    .rstn           ( rst_a          ),
+    .start_i        ( start_i        ),
+    .Empty_i        ( Empty_i        ),
+    .data_depth     ( data_depth     ),
+    .data_in        ( Q_interp       ),
+    .Read_Enable_o  ( Read_Enable_o  ),
+    .addr_Mem_o     ( addr_Mem_o     ),
+    .Write_Enable_o ( Write_Enable_o ),
+    .data_out       ( data_out       ),
+    .done           ( done           )
+);
+
+
+
+
 
   task write_interface;
     input [4:0] write_conf_dbus;

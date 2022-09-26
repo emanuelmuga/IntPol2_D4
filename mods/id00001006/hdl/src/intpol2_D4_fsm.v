@@ -119,7 +119,7 @@ next_state    <= IDLE;
             end      
         S1:
             begin 
-                en_M_addr     <= 1'b1; //<--
+                en_sum        <= 1'b0;
                 Ld_p1_xi      <= 1'b0;
                 Read_Enable   <= 1'b1; //<--
                 Ld_data       <= 1'b0;
@@ -134,10 +134,17 @@ next_state    <= IDLE;
                     next_state <= S_CLEAR;
                 end    
                 else begin
-                    if(comp_addr)
-                        next_state <= S2; 
-                    else
+                    if(Empty) begin
                         next_state <= S1;
+                        en_M_addr  <= 1'b0; 
+                    end
+                    else begin
+                        en_M_addr     <= 1'b1; //<--
+                        if(comp_addr)
+                            next_state <= S2; 
+                        else
+                            next_state <= S1;
+                    end
                 end                 
             end     
         S2:

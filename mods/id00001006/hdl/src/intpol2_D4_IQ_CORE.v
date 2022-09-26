@@ -43,6 +43,7 @@
 */
 
 module intpol2_D4_IQ_CORE #(
+    parameter   CONFIG_WIDTH  =  32,
     parameter   DATA_WIDTH  =  32, 
     parameter   N_bits      =  2,                               //N <= parte entera
     parameter   M_bits      =  31                               //M <= parte decimal
@@ -63,7 +64,7 @@ module intpol2_D4_IQ_CORE #(
     output wire signed [DATA_WIDTH-1:0] Q_interp                // Result Q                                            
 );
 
-wire        [DATA_WIDTH:0]   ilen;
+wire        [CONFIG_WIDTH-1:0] ilen;
 wire        [DATA_WIDTH-1:0] iX;  
 wire        [DATA_WIDTH-1:0] iX2;  
 wire        [DATA_WIDTH-1:0] data_I;
@@ -94,20 +95,20 @@ wire          [1:0]          sel_xi2;
 wire                         FIFO_bypass;
 
 //-------------------------------------------------------------//
-wire        [DATA_WIDTH-1:0] config_reg0;
-wire        [DATA_WIDTH-1:0] config_reg1;
-wire        [DATA_WIDTH-1:0] config_reg2;
-wire        [DATA_WIDTH-1:0] config_reg3;
+wire        [CONFIG_WIDTH-1:0] config_reg0;
+wire        [CONFIG_WIDTH-1:0] config_reg1;
+wire        [CONFIG_WIDTH-1:0] config_reg2;
+wire        [CONFIG_WIDTH-1:0] config_reg3;
 
-assign config_reg0 = config_reg[DATA_WIDTH-1:0]; 
-assign config_reg1 = config_reg[DATA_WIDTH*2-1:DATA_WIDTH];
-assign config_reg2 = config_reg[DATA_WIDTH*3-1:DATA_WIDTH*2];
-assign config_reg3 = config_reg[DATA_WIDTH*4-1:DATA_WIDTH*3];
+assign config_reg0 = config_reg[CONFIG_WIDTH-1:0]; 
+assign config_reg1 = config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH];
+assign config_reg2 = config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2];
+assign config_reg3 = config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3];
 
 assign bypass        = config_reg0[0];
-assign iX            = config_reg1[31:0];
-assign iX2           = config_reg2[31:0];
-assign ilen          = config_reg3[DATA_WIDTH-1:0];
+assign iX            = config_reg1[CONFIG_WIDTH-1:0];
+assign iX2           = config_reg2[CONFIG_WIDTH-1:0];
+assign ilen          = config_reg3[CONFIG_WIDTH-1:0];
 
 assign status_reg[0] = done;
 assign status_reg[1] = busy;

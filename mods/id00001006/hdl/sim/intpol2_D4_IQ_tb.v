@@ -1,10 +1,12 @@
 `timescale 1ns/100ps
  
 module intpol2_D4_IQ_tb();
+
+localparam   CONFIG_WIDTH = 32;
  
-localparam   DATA_WIDTH  =  32; 
+localparam   DATA_WIDTH  =  16; 
 parameter    N_bits      =  2;                               //N <= parte entera
-parameter    M_bits      =  31;                              //M = parte decimal
+parameter    M_bits      =  15;                              //M = parte decimal
 parameter   FIFO_ADDR_WIDTH = 3;
 
 parameter   BYPASS          = 0;   //bypass   ~OFF/ON           
@@ -49,6 +51,8 @@ wire Empty_Indica_Q;
 wire Almost_Full_I;
 wire Almost_Full_Q;
 
+wire Almost_Empty_FIFO_in;
+
 assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
 assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
 
@@ -65,6 +69,7 @@ reg                           WE_fifo_ff;
 
 
 intpol2_D4_IQ_CORE#(
+    .CONFIG_WIDTH        ( CONFIG_WIDTH        ),
     .DATA_WIDTH          ( DATA_WIDTH          ),
     .N_bits              ( N_bits              ),
     .M_bits              ( M_bits              )
@@ -103,7 +108,7 @@ DC_FIFO_AF_AE #(
     .Empty_Indica_o   (	Empty_Indica_I       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
     .Almost_Full__o   (	                     ),    
-    .Almost_Empty_o   (		                 )
+    .Almost_Empty_o   (	Almost_Empty_FIFO_in )
 );
 
 DC_FIFO_AF_AE #(
@@ -167,10 +172,13 @@ DC_FIFO_AF_AE #(
 
 
 localparam SF  = 2.0**-(M_bits);                //scaling factor
+// localparam SF  = 2.0**-(DATA_WIDTH+N_bits);
 
 reg [DATA_WIDTH-1:0] mem_signal [0:100];
 reg [DATA_WIDTH-1:0] mem_config [0:4-1];
 integer iter;
+
+integer num = 32'h00010131;
 
 initial
     begin
@@ -185,19 +193,22 @@ task interpol_data;
     end
 endtask
 
-task write_fifo_in;
-    input [DATA_WIDTH-1:0] data_in;
+task write_fifo_in_cc_delay (input [DATA_WIDTH-1:0] data_in, input [5:0] cc_delay);
     begin
+        #(cc_delay*10)
         WE_fifo_in = 1'b1;
         data_in_fifo = data_in;
         #10;
-        WE_fifo_in = 1'b1;
+        WE_fifo_in = 1'b0;
     end
 endtask
 
 initial
-begin
+begin 
     $readmemh("signal_test.ipd", mem_signal);
+
+     $display("numtest: %f", $itor(mem_signal[1]*(2.0**-(31))));
+
     $readmemh("config.ipd", mem_config);
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
 
@@ -216,17 +227,16 @@ begin
     rstn = 0;
     #10;
     rstn = 1;
-    #5;
-
-    for(iter = 0; iter<8; iter = iter+1) begin
-        write_fifo_in(mem_signal[iter]);
-    end
+    #50;
     start = 1;
     #10;
     start = 0;
-    #500;
+    for(iter = 0; iter<16; iter = iter+1) begin
+        write_fifo_in_cc_delay(mem_signal[iter],2);
+    end
+    #1500;
     RE_fifo_out = 1;
-    #50;
+    #500;
     RE_fifo_out = 0;
     #10;
     RE_fifo_out = 1;

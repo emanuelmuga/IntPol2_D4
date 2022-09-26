@@ -52,9 +52,9 @@ always @(posedge clk or negedge rstn or posedge clear) begin
         if(en_M_addr) begin
             M_cnt = M_cnt + 1'b1;
         end
-        else begin
-            M_cnt = 1'b0;
-        end
+        // else begin
+        //     M_cnt = 1'b0;
+        // end
 
         if(done) begin
             cnt    = {DATA_WIDTH{1'b0}};

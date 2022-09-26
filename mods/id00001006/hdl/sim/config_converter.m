@@ -5,8 +5,10 @@ set(0,'DefaultFigureWindowStyle','docked');
 
 Design         = 1;
 
-M_bits         = 31;
-DATA_WIDTH     = 32;
+M_bits         = 15;
+DATA_WIDTH     = 16;
+
+CONFIG_WIDTH   = 32;
 
 DATA_WIDTH_MAX = 32;
 SF = 2^(-M_bits);
@@ -120,7 +122,7 @@ fclose(fileID);
 [col,fil] = size(config_reg_S);
 k = 1;
 fileID = fopen('config.ipd','w');
-for ii = 1:col
+for ii = 1:CONFIG_WIDTH
     for jj = 1:(fil+2)
         if (k==1)
             fprintf(fileID,'%s','0');
