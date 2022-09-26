@@ -119,10 +119,8 @@ assign status_reg[5] = bypass;
 
 assign Read_Enable_fifo  = Read_Enable_w;                
 assign Write_Enable_fifo = bypass            ? FIFO_bypass         : Write_Enable_w;                          
-assign I_interp          = bypass            ? data_in_from_fifo_I :
-                           Write_Enable_w    ? data_I : last_I;
-assign Q_interp          = bypass            ? data_in_from_fifo_Q : 
-                           Write_Enable_w    ? data_Q : last_Q;
+assign I_interp          = bypass            ? data_in_from_fifo_I : data_I;
+assign Q_interp          = bypass            ? data_in_from_fifo_Q : data_Q;
 
 //-------------------------------------------------------------//
 
@@ -147,7 +145,6 @@ intpol2_D4_Datapath#(
     .data_to_process ( data_in_from_fifo_I ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
-    .last_value      ( last_I              ),
     .data_out        ( data_I              )
 );
 
@@ -172,7 +169,6 @@ intpol2_D4_Datapath#(
     .data_to_process ( data_in_from_fifo_Q ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
-    .last_value      ( last_Q              ),
     .data_out        ( data_Q              )
 );
     
