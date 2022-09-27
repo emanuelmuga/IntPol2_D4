@@ -1,12 +1,13 @@
 module intpol2_D4_Controlpath #(
-    parameter   DATA_WIDTH  =  32
+    parameter   DATA_WIDTH  =  32,
+    parameter   CONFIG_WIDTH = 32
 )(
     input                                 clk, 
     input                                 rstn, 
     input                                 start,
     input                                 Empty_i,
     input                                 Afull_i,
-    input              [DATA_WIDTH:0]     ilen,
+    input          [CONFIG_WIDTH-1:0]     ilen,
     input                                 bypass,    
     output wire                           Ld_M0,
     output wire                           Ld_M1,
@@ -36,7 +37,8 @@ wire en_M_addr;
 
 
 intpol2_D4_nxt_ste_lgc#(
-    .DATA_WIDTH     ( DATA_WIDTH     )
+    .DATA_WIDTH     ( DATA_WIDTH     ),
+    .CONFIG_WIDTH   ( CONFIG_WIDTH   )
 )next_state_logic(
     .clk            ( clk            ),
     .rstn           ( rstn           ),

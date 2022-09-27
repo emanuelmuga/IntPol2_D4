@@ -4,7 +4,7 @@
     Contact       : emanuel.murillo@cinvestav.mx
                     emanuel.muga13@gmail.com
 
-    Module Name   : intpol2_D4_IQ (TOP), Interpolador Cuadratico Diseño IV IQ
+    Module Name   : intpol2_D4_IQ_CORE (TOP), Interpolador Cuadratico Diseño IV IQ
     Type          : Verilog module
     
     Description   : Obtine los valores interpolados entre tres datos de entrada, M0, M1, M2.
@@ -21,12 +21,10 @@
                     DATA_WIDTH                    Tamaño de palabra
                     N_bits                        No. bits parte entera
                     M_bits                        No. bits parte frac. 
-                    MEM_SIZE_Y                    Tamaño de memoria de salida
-                    MEM_SIZE_M                    Tamaño de memoria de entrada
                     -------------------------------------------------------------
     Config_reg    : bypass = config_reg0[0];                                  
                     iX     = config_reg1[31:0];  Factor de interpolacion  
-                    iX     = config_reg2[31:0];  Factor de interpolacion^2          
+                    iX2    = config_reg2[31:0];  Factor de interpolacion^2          
                     ilen   = config_reg3[7:0];   Duración de iteración LENGHT 
                                         
                     -------------------------------------------------------------
@@ -84,7 +82,9 @@ wire                         Ld_M2;
 wire                         Ld_data;
 wire                         Ld_p1_xi;
 wire                         Read_Enable_w;
-wire                         Write_Enable_w; 
+wire                         Write_Enable_w;
+
+//-----------------------Status signals------------------------//
 wire                         done;
 wire                         bypass;                           
 wire                         busy; 
@@ -106,8 +106,8 @@ assign config_reg2 = config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2];
 assign config_reg3 = config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3];
 
 assign bypass        = config_reg0[0];
-assign iX            = config_reg1[CONFIG_WIDTH-1:0];
-assign iX2           = config_reg2[CONFIG_WIDTH-1:0];
+assign iX            = config_reg1[DATA_WIDTH-1:0];
+assign iX2           = config_reg2[DATA_WIDTH-1:0];
 assign ilen          = config_reg3[CONFIG_WIDTH-1:0];
 
 assign status_reg[0] = done;
@@ -175,7 +175,8 @@ intpol2_D4_Datapath#(
     
 
 intpol2_D4_Controlpath#(
-    .DATA_WIDTH     ( DATA_WIDTH     )
+    .DATA_WIDTH     ( DATA_WIDTH     ),
+    .CONFIG_WIDTH   ( CONFIG_WIDTH   )
 )Controlpath(
     .clk            ( clk            ),
     .rstn           ( rstn           ),

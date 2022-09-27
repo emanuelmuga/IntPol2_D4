@@ -6,7 +6,7 @@ localparam   CONFIG_WIDTH = 32;
  
 localparam   DATA_WIDTH  =  16; 
 parameter    N_bits      =  2;                               //N <= parte entera
-parameter    M_bits      =  15;                              //M = parte decimal
+parameter    M_bits      =  14;                              //M = parte decimal
 parameter   FIFO_ADDR_WIDTH = 3;
 
 parameter   BYPASS          = 0;   //bypass   ~OFF/ON           
@@ -16,10 +16,10 @@ reg                           clk;
 reg                           rstn; 
 reg                           start;
 
-reg         [DATA_WIDTH-1:0]  config_reg0;
-reg         [DATA_WIDTH-1:0]  config_reg1;
-reg         [DATA_WIDTH-1:0]  config_reg2;
-reg         [DATA_WIDTH-1:0]  config_reg3;
+reg         [CONFIG_WIDTH-1:0]  config_reg0;
+reg         [CONFIG_WIDTH-1:0]  config_reg1;
+reg         [CONFIG_WIDTH-1:0]  config_reg2;
+reg         [CONFIG_WIDTH-1:0]  config_reg3;
 
 reg                           WE_fifo_in;
 reg  signed [DATA_WIDTH-1:0]  data_in_fifo;
@@ -59,10 +59,10 @@ assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
 assign done = status_reg[0];
 assign busy = status_reg[1];
 
-assign config_reg[DATA_WIDTH-1:0]              = config_reg0; 
-assign config_reg[DATA_WIDTH*2-1:DATA_WIDTH]   = config_reg1;
-assign config_reg[DATA_WIDTH*3-1:DATA_WIDTH*2] = config_reg2;
-assign config_reg[DATA_WIDTH*4-1:DATA_WIDTH*3] = config_reg3;
+assign config_reg[CONFIG_WIDTH-1:0]              = config_reg0; 
+assign config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH]   = config_reg1;
+assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
+assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
 reg                           WE_fifo_out_ff;
 reg                           WE_fifo_ff;
@@ -175,7 +175,7 @@ localparam SF  = 2.0**-(M_bits);                //scaling factor
 // localparam SF  = 2.0**-(DATA_WIDTH+N_bits);
 
 reg [DATA_WIDTH-1:0] mem_signal [0:100];
-reg [DATA_WIDTH-1:0] mem_config [0:4-1];
+reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
 integer iter;
 
 integer num = 32'h00010131;
@@ -205,11 +205,11 @@ endtask
 
 initial
 begin 
-    $readmemh("signal_test.ipd", mem_signal);
+    $readmemh("../signal_test.ipd", mem_signal);
 
      $display("numtest: %f", $itor(mem_signal[1]*(2.0**-(31))));
 
-    $readmemh("config.ipd", mem_config);
+    $readmemh("../config.ipd", mem_config);
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
 
     config_reg0 = mem_config[0];

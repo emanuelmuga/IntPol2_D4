@@ -5,8 +5,8 @@ set(0,'DefaultFigureWindowStyle','docked');
 
 Design         = 1;
 
-M_bits         = 14;
-DATA_WIDTH     = 16;
+M_bits         = 15;
+DATA_WIDTH     =   ;
 
 CONFIG_WIDTH   = 32;
 

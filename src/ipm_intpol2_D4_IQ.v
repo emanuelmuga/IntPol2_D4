@@ -62,22 +62,6 @@ module ipm_intpol2_D4_IQ
     .ipmPIPINTIn(wireINT)
 );
 
-// ID00001006_intpol2_V4 IP_MODULE(
-//     .clk                 ( clk                 ),
-//     .rst_a               ( wireReset           ),
-//     .en_s                ( 1'b1                ),
-//     .data_in             ( wireDataMCUtoIP     ),
-//     .data_out            ( wireDataIPtoMCU     ),
-//     .write               ( wireWriteIP         ),
-//     .read                ( wireReadIP          ),
-//     .start               ( wireStartIP         ),
-//     .conf_dbus           ( wireConf            ),
-//     .int_req             ( wireINT             ),
-//     .Afull_i             ( Afull_i             ),
-//     .Afull_o             ( Afull_o             ),
-//     .Write_Enable_fifo_i ( Write_Enable_fifo_i ),
-//     .data_in_fifo        ( data_in_fifo        )
-// );
 
 ID00001006_intpol2_V4_IQ IP_MODULE(
     .clk            ( clk              ),

@@ -246,7 +246,7 @@ next_state    <= IDLE;
                     next_state <= S_STREAM;
                 end                               
             end 
-     S_STREAM:
+        S_STREAM:
             begin
                 busy          <= 1'b1; //<--
                 en_sum        <= 1'b0;
