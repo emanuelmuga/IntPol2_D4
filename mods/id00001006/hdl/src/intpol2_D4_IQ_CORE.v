@@ -62,13 +62,12 @@ module intpol2_D4_IQ_CORE #(
     output wire signed [DATA_WIDTH-1:0] Q_interp                // Result Q                                            
 );
 
+//-----------------------Connection signals--------------------//
 wire        [CONFIG_WIDTH-1:0] ilen;
 wire        [DATA_WIDTH-1:0] iX;  
 wire        [DATA_WIDTH-1:0] iX2;  
 wire        [DATA_WIDTH-1:0] data_I;
 wire        [DATA_WIDTH-1:0] data_Q;
-wire        [DATA_WIDTH-1:0] last_I;
-wire        [DATA_WIDTH-1:0] last_Q;
 
 
 //-----------------------Control signals-----------------------//

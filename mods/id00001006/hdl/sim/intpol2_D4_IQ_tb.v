@@ -172,7 +172,6 @@ DC_FIFO_AF_AE #(
 
 
 localparam SF  = 2.0**-(M_bits);                //scaling factor
-// localparam SF  = 2.0**-(DATA_WIDTH+N_bits);
 
 reg [DATA_WIDTH-1:0] mem_signal [0:100];
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
