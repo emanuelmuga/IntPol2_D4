@@ -47,11 +47,13 @@ wire signed [DATA_WIDTH+N_bits-1:0] xi2_w;
 wire signed [DATA_WIDTH-1:0] xi2;
 
 wire signed [DATA_WIDTH+N_bits-1:0] x_w;
+wire signed [DATA_WIDTH+N_bits-1:0] x2_w;
 wire signed [DATA_WIDTH+N_bits-1:0] data_to_process_w;
 
 reg signed  [DATA_WIDTH+N_bits-1:0] p1_xi;                           // p1 * x * i
 
 assign x_w    = {{N_bits{1'b0}},x};
+assign x2_w    = {{N_bits{1'b0}},x2};
 assign xi2_w  = {{N_bits{1'b0}},xi2};
 
 assign data_to_process_w = {{N_bits{data_to_process[DATA_WIDTH-1]}},data_to_process};
@@ -87,7 +89,8 @@ end
 
 //--------------------------M2 + M0-----------------------------//
 intpol2_D4_adder#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )ADDER(
     .A  ( m2  ),
     .B  ( m0  ),
@@ -95,7 +98,8 @@ intpol2_D4_adder#(
 );
 //----------------------- (M2 + M0)/2 --------------------------//
 intpol2_D4_shift#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )SHIFT_DIV(
     .OP        (  1'b1      ),
     .data_in   (  m2_m0     ),
@@ -105,7 +109,8 @@ intpol2_D4_shift#(
 
 //---------------- p2 = (M2 + M0)/2 - m1 -----------------------//
 intpol2_D4_sub_sync#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )SUB_1(
     .clk        ( clk         ),
     .rstn       ( rstn        ),
@@ -117,7 +122,8 @@ intpol2_D4_sub_sync#(
 
 //--------------------------- 2*m1 -----------------------------//
 intpol2_D4_shift#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )SHIFT_Mult(
     .OP        (  1'b0   ),
     .data_in   (  m1     ),
@@ -127,7 +133,8 @@ intpol2_D4_shift#(
 //------------------------ (2*m1 - m0) ------------------------//
 
 intpol2_D4_sub#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )SUB_2(
     .A  ( t2_m1  ),
     .B  ( m0  ),
@@ -137,7 +144,8 @@ intpol2_D4_sub#(
 //--------------- p1 = (t2_m1 - m0) - m2_m0_div2) ------------------//
 
 intpol2_D4_sub_sync#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )SUB_3(
     .clk        ( clk        ),
     .rstn       ( rstn       ),
@@ -150,7 +158,8 @@ intpol2_D4_sub_sync#(
 //--------------------------- x*i -----------------------//
 
 intpol2_D4_mult_by_add#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )MULTI_BY_ADD(
     .clk     ( clk     ),
     .rstn    ( rstn    ),
@@ -175,15 +184,16 @@ intpol2_D4_mult_by_add#(
 // );
 
 intpol2_D4_squared#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )Squared(
     .clk     ( clk     ),
     .rstn    ( rstn    ),
     .clear   ( clear   ),
     .en_xi2  ( en_sum  ),
     .sel_xi2 ( sel_xi2 ),
-    .x2      ( x2      ),
-    .xi2     ( xi2     )
+    .x2      ( x2_w      ),
+    .xi2     ( xi2_w     )
 );
 
 //--------------------- p1 * xi  OR  p2 * xi^2  -----------------------//
@@ -205,7 +215,8 @@ intpol2_D4_multi_mux#(
 //---------- Y = p0 + M_p1_x_cnt + p2_x2_cnt2 ---------------------//
 
 intpol2_D4_adder3#(
-    .DATA_WIDTH ( DATA_WIDTH )
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .N_bits(N_bits)
 )ADDER3(
     .A ( m0        ),
     .B ( p1_xi     ),

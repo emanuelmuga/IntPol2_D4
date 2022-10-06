@@ -3,10 +3,12 @@
 module intpol2_D4_IQ_tb();
 
 localparam   CONFIG_WIDTH = 32;
+localparam   ADDR_WIDTH = $clog2(49989);
+// localparam   ADDR_WIDTH = 32;
  
-localparam   DATA_WIDTH  =  16; 
-parameter    N_bits      =  2;                               //N <= parte entera
-parameter    M_bits      =  14;                              //M = parte decimal
+localparam   DATA_WIDTH  =  12; 
+parameter    N_bits      =  3;                               //N <= parte entera
+parameter    M_bits      =  11;                              //M = parte decimal
 parameter   FIFO_ADDR_WIDTH = 3;
 
 parameter   BYPASS          = 0;   //bypass   ~OFF/ON           
@@ -21,12 +23,10 @@ reg         [CONFIG_WIDTH-1:0]  config_reg1;
 reg         [CONFIG_WIDTH-1:0]  config_reg2;
 reg         [CONFIG_WIDTH-1:0]  config_reg3;
 
-reg                           WE_fifo_in;
-reg  signed [DATA_WIDTH-1:0]  data_in_fifo;
-reg                           RE_fifo_out;
-
 wire               [128-1:0]  config_reg;
-
+wire                          WE_fifo_in;
+wire                          RE_fifo_out;
+wire signed [DATA_WIDTH-1:0]  data_in_fifo;
 wire signed [DATA_WIDTH-1:0]  data_out_fifo;
 wire                          Empty_intpol2;
 wire                          Afull_intpol2;
@@ -50,8 +50,18 @@ wire Empty_Indica_I;
 wire Empty_Indica_Q;
 wire Almost_Full_I;
 wire Almost_Full_Q;
+wire Empty_fifo_out;
+reg en;
+wire [ADDR_WIDTH-1:0] M_addr;
+wire Afull_fifo_in;
+wire [ADDR_WIDTH-1:0] Y_addr;
+wire WE_Y;
 
 wire Almost_Empty_FIFO_in;
+wire [ADDR_WIDTH-1:0] ilen;
+wire comp_len;
+wire done_sink;
+wire [CONFIG_WIDTH-1:0] total_len;
 
 assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
 assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
@@ -64,8 +74,7 @@ assign config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH]   = config_reg1;
 assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
 assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
-reg                           WE_fifo_out_ff;
-reg                           WE_fifo_ff;
+assign ilen     = config_reg3[ADDR_WIDTH-1:0];
 
 
 intpol2_D4_IQ_CORE#(
@@ -90,6 +99,53 @@ intpol2_D4_IQ_CORE#(
 );
 
 
+Source_sim#(
+    .ADDR_WIDTH ( ADDR_WIDTH )
+)Source_sim(
+    .clk   ( clk           ),
+    .rst   ( rstn          ),
+    .en    ( en            ),
+    .Afull ( Afull_fifo_in ),
+    .addr  ( M_addr          ),
+    .WE    ( WE_fifo_in    )
+);
+
+M_mem#(
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .MEM_SIZE_M ( ADDR_WIDTH )
+)M_MEM(
+    .clk        ( clk            ),
+    .M_addr     ( M_addr         ),
+    .data_out   ( data_in_fifo   )
+);
+
+Sink_sim#(
+    .ADDR_WIDTH     ( ADDR_WIDTH ),
+    .CONFIG_WIDTH   (CONFIG_WIDTH  )
+)Sink_sim(
+    .clk            ( clk            ),
+    .rstn           ( rstn           ),
+    .start_i        ( start          ),
+    .Empty_i        ( Empty_fifo_out ),
+    .ilen           ( total_len      ),
+    .addr           ( Y_addr         ),
+    .Read_Enable_o  ( RE_fifo_out    ),
+    .Write_Enable_o ( WE_Y           ),
+    .done           ( done_sink      )
+);
+
+
+Y_mem#(
+    .DATA_WIDTH ( DATA_WIDTH ),
+    .MEM_SIZE_Y ( ADDR_WIDTH )
+)Y_mem(
+    .clk        ( clk                   ),
+    .Y_addr     ( Y_addr                ),
+    .WE         ( WE_Y                  ),
+    .data_in    ( data_out_from_fifo_I  )
+);
+
+
 //-----------FIFOs de entrada-------------------------//
 
 DC_FIFO_AF_AE #(
@@ -107,7 +163,7 @@ DC_FIFO_AF_AE #(
     .data_output__o   (	data_in_from_fifo_I  ),
     .Empty_Indica_o   (	Empty_Indica_I       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
-    .Almost_Full__o   (	                     ),    
+    .Almost_Full__o   (	Afull_fifo_in        ),    
     .Almost_Empty_o   (	Almost_Empty_FIFO_in )
 );
 
@@ -145,7 +201,7 @@ DC_FIFO_AF_AE #(
     .differenceAE_i   (	3'h2             ),    // Difference (memory locations) between AE & Empty flag
     .data_input___i   (	I_interp         ),
     .data_output__o   (	data_out_from_fifo_I ),
-    .Empty_Indica_o   (	     	         ),    // Empty FIFO indicator synchronized with Read clock
+    .Empty_Indica_o   (	Empty_fifo_out   ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		             ),    // Set by the write clock and cleared by the reading clock
     .Almost_Full__o   (	Almost_Full_I    ),    
     .Almost_Empty_o   (		             )
@@ -173,11 +229,13 @@ DC_FIFO_AF_AE #(
 
 localparam SF  = 2.0**-(M_bits);                //scaling factor
 
-reg [DATA_WIDTH-1:0] mem_signal [0:100];
+// reg [DATA_WIDTH-1:0] mem_signal [0:100];
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
-integer iter;
+reg [CONFIG_WIDTH-1:0] signal_len [0:1];
+assign total_len = signal_len[0]*(ilen)-(2*ilen);
+integer fd;
+integer i;
 
-integer num = 32'h00010131;
 
 initial
     begin
@@ -185,43 +243,32 @@ initial
         forever clk = #5 ~clk;
     end
 
-task interpol_data;
-
-    begin
-
-    end
-endtask
-
-task write_fifo_in_cc_delay (input [DATA_WIDTH-1:0] data_in, input [5:0] cc_delay);
-    begin
-        #(cc_delay*10)
-        WE_fifo_in = 1'b1;
-        data_in_fifo = data_in;
-        #10;
-        WE_fifo_in = 1'b0;
-    end
-endtask
+// task write_fifo_in_cc_delay (input [DATA_WIDTH-1:0] data_in, input [5:0] cc_delay);
+//     begin
+//         #(cc_delay*10)
+//         WE_fifo_in = 1'b1;
+//         data_in_fifo = data_in;
+//         #10;
+//         WE_fifo_in = 1'b0;
+//     end
+// endtask
 
 initial
 begin 
-    $readmemh("../signal_test.ipd", mem_signal);
-
-     $display("numtest: %f", $itor(mem_signal[1]*(2.0**-(31))));
-
+   
     $readmemh("../config.ipd", mem_config);
+    $readmemh("../signal_len.txt", signal_len);
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
 
     config_reg0 = mem_config[0];
     config_reg1 = mem_config[1];
     config_reg2 = mem_config[2];
     config_reg3 = mem_config[3];  
-
+    $display("total len: %d", total_len);
     // Wait for global reset to finish
     rstn = 1;
+    en = 0;
     start = 0;
-    WE_fifo_in = 0;
-    RE_fifo_out = 0;
-    iter = 0;
     #10;
     rstn = 0;
     #10;
@@ -229,20 +276,21 @@ begin
     #50;
     start = 1;
     #10;
+    en = 1;
     start = 0;
-    for(iter = 0; iter<16; iter = iter+1) begin
-        write_fifo_in_cc_delay(mem_signal[iter],2);
-    end
-    #1500;
-    RE_fifo_out = 1;
-    #500;
-    RE_fifo_out = 0;
-    #10;
-    RE_fifo_out = 1;
-        
-    
+
 end
 
+always @(done_sink) begin
+    if(done_sink) begin
+        fd = $fopen("data_out_sim.txt","w");
+        for(i=0; i<= total_len; i = i+1) begin
+            $fdisplay(fd, "%h", Y_mem.mem[i]);
+        end
+        $fclose(fd);
+        $stop;
+    end
+end
 
 always @(DUT.Controlpath.FSM.state) begin
     if(DUT.Controlpath.FSM.state == 3'h1) begin
@@ -279,7 +327,51 @@ always @(posedge clk) begin
             $display("Done");  
 end
 
+//-------------------Memoria de entrada M------------------//
 
+module M_mem #(
+    parameter   DATA_WIDTH = 16,
+    parameter   MEM_SIZE_M  = $clog2(3)
+)(
+    input      clk,
+    input      [MEM_SIZE_M-1:0] M_addr,
+    output reg [DATA_WIDTH-1:0] data_out
+);
+
+    reg [DATA_WIDTH-1:0] mem [0:(2**MEM_SIZE_M)-1];
+
+    always @(posedge clk) begin
+            data_out <= mem[M_addr];
+    end
+
+    initial begin
+        // $readmemh("../signal_test.ipd", mem);
+         $readmemh("../OutputSine.txt", mem);
+    end
+
+endmodule
+
+//-------------------Memoria de Salida Y------------------//
+
+module Y_mem #(
+    parameter   DATA_WIDTH = 16,
+    parameter   MEM_SIZE_Y  = $clog2(16)
+)(
+    input      clk,
+    input      [MEM_SIZE_Y-1:0] Y_addr,
+    input      WE,
+    input signed  [DATA_WIDTH-1:0] data_in
+);
+
+    reg signed [DATA_WIDTH-1:0] mem [0:(2**MEM_SIZE_Y)-1];
+
+    always @(posedge clk) begin
+        if(WE)
+            mem[Y_addr] <= data_in;
+    end
+    
+
+endmodule
 
 
 
