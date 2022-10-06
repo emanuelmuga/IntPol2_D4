@@ -54,7 +54,7 @@ reg signed  [DATA_WIDTH+N_bits-1:0] p1_xi;                           // p1 * x *
 
 assign x_w    = {{N_bits{1'b0}},x};
 assign x2_w    = {{N_bits{1'b0}},x2};
-assign xi2_w  = {{N_bits{1'b0}},xi2};
+// assign xi2_w  = {{N_bits{1'b0}},xi2};
 
 assign data_to_process_w = {{N_bits{data_to_process[DATA_WIDTH-1]}},data_to_process};
 

@@ -3,15 +3,16 @@
 module intpol2_D4_IQ_tb();
 
 localparam   CONFIG_WIDTH = 32;
-localparam   ADDR_WIDTH = $clog2(49989);
+localparam   ADDR_WIDTH = $clog2(2**20);
 // localparam   ADDR_WIDTH = 32;
  
 localparam   DATA_WIDTH  =  12; 
-parameter    N_bits      =  3;                               //N <= parte entera
-parameter    M_bits      =  11;                              //M = parte decimal
-parameter   FIFO_ADDR_WIDTH = 3;
+localparam    N_bits      =  4;                               //N <= parte entera
+localparam    M_bits      =  11;                              //M = parte decimal
+localparam   FIFO_ADDR_WIDTH = 3;
+localparam SF  = 2.0**-(M_bits);                //scaling factor
 
-parameter   BYPASS          = 0;   //bypass   ~OFF/ON           
+localparam   BYPASS          = 0;   //bypass   ~OFF/ON           
 
 
 reg                           clk;
@@ -61,7 +62,7 @@ wire Almost_Empty_FIFO_in;
 wire [ADDR_WIDTH-1:0] ilen;
 wire comp_len;
 wire done_sink;
-wire [CONFIG_WIDTH-1:0] total_len;
+wire [ADDR_WIDTH-1:0] total_len;
 
 assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
 assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
@@ -74,7 +75,7 @@ assign config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH]   = config_reg1;
 assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
 assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
-assign ilen     = config_reg3[ADDR_WIDTH-1:0];
+assign ilen = config_reg3[ADDR_WIDTH-1:0];
 
 
 intpol2_D4_IQ_CORE#(
@@ -121,7 +122,7 @@ M_mem#(
 
 Sink_sim#(
     .ADDR_WIDTH     ( ADDR_WIDTH ),
-    .CONFIG_WIDTH   (CONFIG_WIDTH  )
+    .CONFIG_WIDTH   ( CONFIG_WIDTH  )
 )Sink_sim(
     .clk            ( clk            ),
     .rstn           ( rstn           ),
@@ -227,7 +228,7 @@ DC_FIFO_AF_AE #(
 );
 
 
-localparam SF  = 2.0**-(M_bits);                //scaling factor
+
 
 // reg [DATA_WIDTH-1:0] mem_signal [0:100];
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
@@ -264,7 +265,7 @@ begin
     config_reg1 = mem_config[1];
     config_reg2 = mem_config[2];
     config_reg3 = mem_config[3];  
-    $display("total len: %d", total_len);
+    $display("total len: %s", total_len);
     // Wait for global reset to finish
     rstn = 1;
     en = 0;

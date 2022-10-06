@@ -2,9 +2,9 @@ module intpol2_D4_squared#(
     parameter  DATA_WIDTH   = 32,
     parameter  N_bits = 2
 )(
-    input                               clk, rstn, clear,
-    input                               en_xi2,
-    input              [1:0]            sel_xi2,
+    input                                      clk, rstn, clear,
+    input                                      en_xi2,
+    input              [1:0]                   sel_xi2,
     input       signed [DATA_WIDTH+N_bits-1:0] x2,
     output reg  signed [DATA_WIDTH+N_bits-1:0] xi2
 );
@@ -24,7 +24,7 @@ wire signed [DATA_WIDTH+N_bits-1:0] C;
 assign x2_plus2  = x2 + x2; 
 assign dif       = xi2 - xi2_past;
 assign dif_2     = dif + x2_plus2;
-assign xi2_shft2 = x2 << 2; 
+assign xi2_shft2 = x2 <<< 2; 
 
 assign sum = dif_2 + xi2; 
 
@@ -51,11 +51,7 @@ always @ (posedge clk or negedge rstn or posedge clear) begin
             xi2 = C;   
             xi2_past = xi2_ff;                                                                                                 
         end
-
-  
     end
-
-
 end
   
 always @(xi2) begin

@@ -7,7 +7,7 @@ module Sink_sim #(
     input rstn,
     input start_i,
     input Empty_i,
-    input [CONFIG_WIDTH-1:0]ilen,
+    input [ADDR_WIDTH-1:0]ilen,
     output reg [ADDR_WIDTH-1:0] addr,
     output reg Read_Enable_o,
     output reg  Write_Enable_o,
