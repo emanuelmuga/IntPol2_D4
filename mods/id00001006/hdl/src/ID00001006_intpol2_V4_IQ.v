@@ -110,7 +110,7 @@ ID00001006_aip INTERFACE(
 
 
 intpol2_D4_IQ_CORE#(
-    .DATA_WIDTH          ( DATAPATH_WIDTH      ),
+    .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
     .N_bits              ( N_bits              ),
     .M_bits              ( M_bits              )
 )CORE(

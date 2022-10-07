@@ -1,5 +1,5 @@
 module intpol2_D4_Datapath #(
-    parameter   DATA_WIDTH  =  32, 
+    parameter   DATAPATH_WIDTH  =  32, 
     parameter   N_bits      =  2,                               //N <= parte entera
     parameter   M_bits      =  31,                              //M <= parte decimal
     parameter   MEM_SIZE_Y  = $clog2(64)
@@ -16,55 +16,55 @@ module intpol2_D4_Datapath #(
     input                               sel_mult,
     input                               op_1,
     input                 [1:0]         sel_xi2,
-    input       signed [DATA_WIDTH-1:0] data_to_process,     
-    input       signed [DATA_WIDTH-1:0] x,
-    input       signed [DATA_WIDTH-1:0] x2,
-    output reg signed [DATA_WIDTH-1:0]  data_out 
+    input       signed [DATAPATH_WIDTH-1:0] data_to_process,     
+    input       signed [DATAPATH_WIDTH-1:0] x,
+    input       signed [DATAPATH_WIDTH-1:0] x2,
+    output reg signed [DATAPATH_WIDTH-1:0]  data_out 
 );
     
-reg  signed [DATA_WIDTH+N_bits-1:0] m0;
-reg  signed [DATA_WIDTH+N_bits-1:0] m1;
-reg  signed [DATA_WIDTH+N_bits-1:0] m2;
+reg  signed [DATAPATH_WIDTH+N_bits-1:0] m0;
+reg  signed [DATAPATH_WIDTH+N_bits-1:0] m1;
+reg  signed [DATAPATH_WIDTH+N_bits-1:0] m2;
 
 reg cnt_clk;
 wire Ld_lv;
 
 //-------------------------Coeficientes------------------------//                    
-wire signed [DATA_WIDTH+N_bits-1:0] p1;                           
-wire signed [DATA_WIDTH+N_bits-1:0] p2;  
+wire signed [DATAPATH_WIDTH+N_bits-1:0] p1;                           
+wire signed [DATAPATH_WIDTH+N_bits-1:0] p2;  
 
 //-----------------------Valores intermedios-------------------//
-wire signed [DATA_WIDTH+N_bits-1:0] m2_m0;                            // m2 + m0
-wire signed [DATA_WIDTH+N_bits-1:0] m2_m0_div2;                       // (m2 + m0)/2
-wire signed [DATA_WIDTH+N_bits-1:0] t2_m1;                            // 2*m1
-wire signed [DATA_WIDTH+N_bits-1:0] t2_m1_m0;                         // 2*m1 - m0
-wire signed [DATA_WIDTH+N_bits-1:0] xi;                               // x * i
-wire signed [DATA_WIDTH+N_bits-1:0] data_y;                           //result de la mult
-wire signed [DATA_WIDTH+N_bits-1:0] p2_xi2;                           // p2 * x^2 * i^2 
+wire signed [DATAPATH_WIDTH+N_bits-1:0] m2_m0;                            // m2 + m0
+wire signed [DATAPATH_WIDTH+N_bits-1:0] m2_m0_div2;                       // (m2 + m0)/2
+wire signed [DATAPATH_WIDTH+N_bits-1:0] t2_m1;                            // 2*m1
+wire signed [DATAPATH_WIDTH+N_bits-1:0] t2_m1_m0;                         // 2*m1 - m0
+wire signed [DATAPATH_WIDTH+N_bits-1:0] xi;                               // x * i
+wire signed [DATAPATH_WIDTH+N_bits-1:0] data_y;                           //result de la mult
+wire signed [DATAPATH_WIDTH+N_bits-1:0] p2_xi2;                           // p2 * x^2 * i^2 
 
-wire signed [DATA_WIDTH+N_bits-1:0] multi_val;                        //resultado del multiplicador reutilizado.                   
-wire signed [DATA_WIDTH+N_bits-1:0] xi2_w;
-wire signed [DATA_WIDTH-1:0] xi2;
+wire signed [DATAPATH_WIDTH+N_bits-1:0] multi_val;                        //resultado del multiplicador reutilizado.                   
+wire signed [DATAPATH_WIDTH+N_bits-1:0] xi2_w;
+wire signed [DATAPATH_WIDTH-1:0] xi2;
 
-wire signed [DATA_WIDTH+N_bits-1:0] x_w;
-wire signed [DATA_WIDTH+N_bits-1:0] x2_w;
-wire signed [DATA_WIDTH+N_bits-1:0] data_to_process_w;
+wire signed [DATAPATH_WIDTH+N_bits-1:0] x_w;
+wire signed [DATAPATH_WIDTH+N_bits-1:0] x2_w;
+wire signed [DATAPATH_WIDTH+N_bits-1:0] data_to_process_w;
 
-reg signed  [DATA_WIDTH+N_bits-1:0] p1_xi;                           // p1 * x * i
+reg signed  [DATAPATH_WIDTH+N_bits-1:0] p1_xi;                           // p1 * x * i
 
 assign x_w    = {{N_bits{1'b0}},x};
 assign x2_w    = {{N_bits{1'b0}},x2};
 // assign xi2_w  = {{N_bits{1'b0}},xi2};
 
-assign data_to_process_w = {{N_bits{data_to_process[DATA_WIDTH-1]}},data_to_process};
+assign data_to_process_w = {{N_bits{data_to_process[DATAPATH_WIDTH-1]}},data_to_process};
 
 always @(posedge clk, negedge rstn) begin
     if(!rstn) begin
-        p1_xi      <=  {DATA_WIDTH+N_bits{1'b0}};
-        m0          =  {DATA_WIDTH+N_bits{1'b0}};
-        m1          =  {DATA_WIDTH+N_bits{1'b0}};
-        m2          =  {DATA_WIDTH+N_bits{1'b0}};
-        data_out    <=  {DATA_WIDTH{1'b0}};
+        p1_xi      <=  {DATAPATH_WIDTH+N_bits{1'b0}};
+        m0          =  {DATAPATH_WIDTH+N_bits{1'b0}};
+        m1          =  {DATAPATH_WIDTH+N_bits{1'b0}};
+        m2          =  {DATAPATH_WIDTH+N_bits{1'b0}};
+        data_out    <=  {DATAPATH_WIDTH{1'b0}};
     end    
     else begin
         // if(Ld_y)      
@@ -83,13 +83,13 @@ always @(posedge clk, negedge rstn) begin
         if(Ld_p1_xi)
             p1_xi = multi_val; 
         if(Ld_data)
-            data_out <= data_y[DATA_WIDTH-1:0];     
+            data_out <= data_y[DATAPATH_WIDTH-1:0];     
     end
 end
 
 //--------------------------M2 + M0-----------------------------//
 intpol2_D4_adder#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )ADDER(
     .A  ( m2  ),
@@ -98,7 +98,7 @@ intpol2_D4_adder#(
 );
 //----------------------- (M2 + M0)/2 --------------------------//
 intpol2_D4_shift#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SHIFT_DIV(
     .OP        (  1'b1      ),
@@ -109,7 +109,7 @@ intpol2_D4_shift#(
 
 //---------------- p2 = (M2 + M0)/2 - m1 -----------------------//
 intpol2_D4_sub_sync#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SUB_1(
     .clk        ( clk         ),
@@ -122,7 +122,7 @@ intpol2_D4_sub_sync#(
 
 //--------------------------- 2*m1 -----------------------------//
 intpol2_D4_shift#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SHIFT_Mult(
     .OP        (  1'b0   ),
@@ -133,7 +133,7 @@ intpol2_D4_shift#(
 //------------------------ (2*m1 - m0) ------------------------//
 
 intpol2_D4_sub#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SUB_2(
     .A  ( t2_m1  ),
@@ -144,7 +144,7 @@ intpol2_D4_sub#(
 //--------------- p1 = (t2_m1 - m0) - m2_m0_div2) ------------------//
 
 intpol2_D4_sub_sync#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SUB_3(
     .clk        ( clk        ),
@@ -158,7 +158,7 @@ intpol2_D4_sub_sync#(
 //--------------------------- x*i -----------------------//
 
 intpol2_D4_mult_by_add#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )MULTI_BY_ADD(
     .clk     ( clk     ),
@@ -171,7 +171,7 @@ intpol2_D4_mult_by_add#(
 
 //--------------------------- xi^2 -----------------------//
 // intpol2_D4_squared#(
-//     .DATA_WIDTH ( DATA_WIDTH ),
+//     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
 //     .MEM_SIZE_Y ( MEM_SIZE_Y )
 // )Squared(
 //     .clk        ( clk        ),
@@ -184,7 +184,7 @@ intpol2_D4_mult_by_add#(
 // );
 
 intpol2_D4_squared#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )Squared(
     .clk     ( clk     ),
@@ -199,7 +199,7 @@ intpol2_D4_squared#(
 //--------------------- p1 * xi  OR  p2 * xi^2  -----------------------//
 
 intpol2_D4_multi_mux#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits     ( N_bits     ),
     .M_bits     ( M_bits     )
 )MULTI_MUX(
@@ -215,7 +215,7 @@ intpol2_D4_multi_mux#(
 //---------- Y = p0 + M_p1_x_cnt + p2_x2_cnt2 ---------------------//
 
 intpol2_D4_adder3#(
-    .DATA_WIDTH ( DATA_WIDTH ),
+    .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )ADDER3(
     .A ( m0        ),

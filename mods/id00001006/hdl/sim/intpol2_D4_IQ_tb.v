@@ -2,49 +2,49 @@
  
 module intpol2_D4_IQ_tb();
 
-localparam   CONFIG_WIDTH = 32;
-localparam   ADDR_WIDTH = $clog2(2**20);
-// localparam   ADDR_WIDTH = 32;
- 
-localparam   DATA_WIDTH  =  12; 
-localparam    N_bits      =  4;                               //N <= parte entera
-localparam    M_bits      =  11;                              //M = parte decimal
+localparam   CONFIG_WIDTH    = 32;
+localparam   ADDR_WIDTH      = $clog2(2**20);
+localparam   DATAPATH_WIDTH  =  12; 
+localparam   N_bits          =  4;                    //N <= parte entera
+localparam   M_bits          =  11;                   //M = parte decimal
 localparam   FIFO_ADDR_WIDTH = 3;
-localparam SF  = 2.0**-(M_bits);                //scaling factor
+localparam   SF              = 2.0**-(M_bits);        //scaling factor (printing matters)
 
+localparam   DEBUGMODE       = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
 localparam   BYPASS          = 0;   //bypass   ~OFF/ON           
 
 
-reg                           clk;
-reg                           rstn; 
-reg                           start;
+reg                              clk;
+reg                              rstn; 
+reg                              start;
+reg                              en;
+reg         [CONFIG_WIDTH-1:0]   config_reg0;
+reg         [CONFIG_WIDTH-1:0]   config_reg1;
+reg         [CONFIG_WIDTH-1:0]   config_reg2;
+reg         [CONFIG_WIDTH-1:0]   config_reg3;
 
-reg         [CONFIG_WIDTH-1:0]  config_reg0;
-reg         [CONFIG_WIDTH-1:0]  config_reg1;
-reg         [CONFIG_WIDTH-1:0]  config_reg2;
-reg         [CONFIG_WIDTH-1:0]  config_reg3;
+wire       [CONFIG_WIDTH*4-1:0] config_reg; // 4 Palabras
+wire                             WE_fifo_in;
+wire                             RE_fifo_out;
+wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_I;
+wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_Q;
+wire signed [DATAPATH_WIDTH-1:0] data_out_fifo;
+wire                             Empty_intpol2;
+wire                             Afull_intpol2;
 
-wire               [128-1:0]  config_reg;
-wire                          WE_fifo_in;
-wire                          RE_fifo_out;
-wire signed [DATA_WIDTH-1:0]  data_in_fifo;
-wire signed [DATA_WIDTH-1:0]  data_out_fifo;
-wire                          Empty_intpol2;
-wire                          Afull_intpol2;
+wire signed [DATAPATH_WIDTH-1:0] data_out_intpol2; 
+wire                             WE_fifo_out;
+wire                             RE_fifo_in;
+wire                             done;
+wire                             busy;
+wire        [8-1:0]              status_reg;
 
-wire signed [DATA_WIDTH-1:0]  data_out_intpol2; 
-wire                          WE_fifo_out;
-wire                          RE_fifo_in;
-wire                          done;
-wire                          busy;
-wire        [8-1:0]           status_reg;
-
-wire signed [DATA_WIDTH-1:0] data_in_from_fifo_I;
-wire signed [DATA_WIDTH-1:0] data_in_from_fifo_Q;
-wire signed [DATA_WIDTH-1:0] I_interp;
-wire signed [DATA_WIDTH-1:0] Q_interp;
-wire signed [DATA_WIDTH-1:0] data_out_from_fifo_I;
-wire signed [DATA_WIDTH-1:0] data_out_from_fifo_Q;
+wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_I;
+wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_Q;
+wire signed [DATAPATH_WIDTH-1:0] I_interp;
+wire signed [DATAPATH_WIDTH-1:0] Q_interp;
+wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_I;
+wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_Q;
 
 
 wire Empty_Indica_I;
@@ -52,11 +52,10 @@ wire Empty_Indica_Q;
 wire Almost_Full_I;
 wire Almost_Full_Q;
 wire Empty_fifo_out;
-reg en;
-wire [ADDR_WIDTH-1:0] M_addr;
 wire Afull_fifo_in;
+wire [ADDR_WIDTH-1:0] M_addr;
 wire [ADDR_WIDTH-1:0] Y_addr;
-wire WE_Y;
+wire WE_Y;                         // Write Enable Y Mem
 
 wire Almost_Empty_FIFO_in;
 wire [ADDR_WIDTH-1:0] ilen;
@@ -64,23 +63,29 @@ wire comp_len;
 wire done_sink;
 wire [ADDR_WIDTH-1:0] total_len;
 
+reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
+reg [CONFIG_WIDTH-1:0] signal_len [0:1];
+
+integer fd;
+integer i;
+
 assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
 assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
 
 assign done = status_reg[0];
 assign busy = status_reg[1];
 
-assign config_reg[CONFIG_WIDTH-1:0]              = config_reg0; 
+assign config_reg[CONFIG_WIDTH-1:0]                = config_reg0; 
 assign config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH]   = config_reg1;
 assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
 assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
 assign ilen = config_reg3[ADDR_WIDTH-1:0];
-
+assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
 
 intpol2_D4_IQ_CORE#(
     .CONFIG_WIDTH        ( CONFIG_WIDTH        ),
-    .DATA_WIDTH          ( DATA_WIDTH          ),
+    .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
     .N_bits              ( N_bits              ),
     .M_bits              ( M_bits              )
 )DUT(
@@ -89,7 +94,7 @@ intpol2_D4_IQ_CORE#(
     .start               ( start               ),
     .Empty_i             ( Empty_intpol2       ),
     .Afull_i             ( Afull_intpol2       ),
-    .config_reg          ( config_reg          ),
+    .config_reg          ( config_reg          ), // 4 Palabras
     .data_in_from_fifo_I ( data_in_from_fifo_I ),
     .data_in_from_fifo_Q ( data_in_from_fifo_Q ),
     .Write_Enable_fifo   ( WE_fifo_out         ),
@@ -107,17 +112,26 @@ Source_sim#(
     .rst   ( rstn          ),
     .en    ( en            ),
     .Afull ( Afull_fifo_in ),
-    .addr  ( M_addr          ),
+    .addr  ( M_addr        ),
     .WE    ( WE_fifo_in    )
 );
 
 M_mem#(
-    .DATA_WIDTH ( DATA_WIDTH ),
-    .MEM_SIZE_M ( ADDR_WIDTH )
-)M_MEM(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_M ( ADDR_WIDTH     )
+)M_MEM_I(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
-    .data_out   ( data_in_fifo   )
+    .data_out   ( data_in_fifo_I )
+);
+
+M_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_M ( ADDR_WIDTH     )
+)M_MEM_Q(
+    .clk        ( clk            ),
+    .M_addr     ( M_addr         ),
+    .data_out   ( data_in_fifo_Q )
 );
 
 Sink_sim#(
@@ -137,20 +151,30 @@ Sink_sim#(
 
 
 Y_mem#(
-    .DATA_WIDTH ( DATA_WIDTH ),
-    .MEM_SIZE_Y ( ADDR_WIDTH )
-)Y_mem(
+    .DATA_WIDTH ( DATAPATH_WIDTH       ),
+    .MEM_SIZE_Y ( ADDR_WIDTH            )
+)Y_mem_I(
     .clk        ( clk                   ),
     .Y_addr     ( Y_addr                ),
     .WE         ( WE_Y                  ),
     .data_in    ( data_out_from_fifo_I  )
 );
 
+Y_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH       ),
+    .MEM_SIZE_Y ( ADDR_WIDTH            )
+)Y_mem_Q(
+    .clk        ( clk                   ),
+    .Y_addr     ( Y_addr                ),
+    .WE         ( WE_Y                  ),
+    .data_in    ( data_out_from_fifo_Q  )
+);
+
 
 //-----------FIFOs de entrada-------------------------//
 
 DC_FIFO_AF_AE #(
-    .DATA_WIDTH(DATA_WIDTH) ,                      // Datawidth of data
+    .DATA_WIDTH(DATAPATH_WIDTH) ,                      // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)                   // Address bits   ( )
 ) FIFO_I_in (
     .Write_clock__i   ( clk                  ),    // posedge active
@@ -160,7 +184,7 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_in           ),    // High active
     .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	data_in_fifo         ),
+    .data_input___i   (	data_in_fifo_I       ),
     .data_output__o   (	data_in_from_fifo_I  ),
     .Empty_Indica_o   (	Empty_Indica_I       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
@@ -169,7 +193,7 @@ DC_FIFO_AF_AE #(
 );
 
 DC_FIFO_AF_AE #(
-    .DATA_WIDTH(DATA_WIDTH) ,                      // Datawidth of data
+    .DATA_WIDTH(DATAPATH_WIDTH) ,                  // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)                   // Address bits   ( )
 ) FIFO_Q_in (
     .Write_clock__i   ( clk                  ),    // posedge active
@@ -179,7 +203,7 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_in           ),    // High active
     .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	data_in_fifo         ),
+    .data_input___i   (	data_in_fifo_Q       ),
     .data_output__o   (	data_in_from_fifo_Q  ),
     .Empty_Indica_o   (	Empty_Indica_Q       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
@@ -190,7 +214,7 @@ DC_FIFO_AF_AE #(
 //-----------FIFOs de Salida-------------------------//
 
 DC_FIFO_AF_AE #(
-    .DATA_WIDTH(DATA_WIDTH) ,                  // Datawidth of data
+    .DATA_WIDTH(DATAPATH_WIDTH) ,                  // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
 ) FIFO_I_out (
     .Write_clock__i   ( clk              ),    // posedge active
@@ -209,7 +233,7 @@ DC_FIFO_AF_AE #(
 );
 
 DC_FIFO_AF_AE #(
-    .DATA_WIDTH(DATA_WIDTH) ,                  // Datawidth of data
+    .DATA_WIDTH(DATAPATH_WIDTH) ,              // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
 ) FIFO_Q_out (
     .Write_clock__i   ( clk              ),    // posedge active
@@ -228,16 +252,6 @@ DC_FIFO_AF_AE #(
 );
 
 
-
-
-// reg [DATA_WIDTH-1:0] mem_signal [0:100];
-reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
-reg [CONFIG_WIDTH-1:0] signal_len [0:1];
-assign total_len = signal_len[0]*(ilen)-(2*ilen);
-integer fd;
-integer i;
-
-
 initial
     begin
         clk = 1;
@@ -254,19 +268,25 @@ initial
 //     end
 // endtask
 
+//------------------Ejemplo del registro de Configuracion----------------
+// config_reg0[0]     = 0;                                     //bypass                      
+// config_reg1[31:0]  = 32'b0_0000100111011000100111011000100; //iX  =  1/26         
+// config_reg2[31:0]  = 32'b0_0000000001100000111100100101100; //iX2 = (1/26)^2   
+// config_reg3[31:0]  = 32'b0_000000000000000000000_0001_1010; //len = 26
+
 initial
 begin 
-   
+    $readmemh("../OutputCos.txt", M_MEM_I.mem);
+    $readmemh("../OutputSine.txt", M_MEM_Q.mem);
     $readmemh("../config.ipd", mem_config);
-    $readmemh("../signal_len.txt", signal_len);
+    $readmemh("../signal_len.txt", signal_len);  // tamano de senal 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
 
     config_reg0 = mem_config[0];
     config_reg1 = mem_config[1];
     config_reg2 = mem_config[2];
     config_reg3 = mem_config[3];  
-    $display("total len: %s", total_len);
-    // Wait for global reset to finish
+    
     rstn = 1;
     en = 0;
     start = 0;
@@ -284,9 +304,14 @@ end
 
 always @(done_sink) begin
     if(done_sink) begin
-        fd = $fopen("data_out_sim.txt","w");
+        fd = $fopen("../interp_cos.txt","w");
         for(i=0; i<= total_len; i = i+1) begin
-            $fdisplay(fd, "%h", Y_mem.mem[i]);
+            $fdisplay(fd, "%h", Y_mem_I.mem[i]);
+        end
+        $fclose(fd);
+        fd = $fopen("../interp_sine.txt","w");
+        for(i=0; i<= total_len; i = i+1) begin
+            $fdisplay(fd, "%h", Y_mem_Q.mem[i]);
         end
         $fclose(fd);
         $stop;
@@ -294,29 +319,32 @@ always @(done_sink) begin
 end
 
 always @(DUT.Controlpath.FSM.state) begin
-    if(DUT.Controlpath.FSM.state == 3'h1) begin
-        $display("-------------------------Config----------------------------------");
-        $display("x: %f, x2: %f, paso: %d", $itor(DUT.Datapath_I.x*SF), $itor(DUT.Datapath_I.x2*SF), $itor(DUT.Controlpath.next_state_logic.ilen));
-        if(config_reg0[0] == 0) begin
-            $display("Bypass = OFF");
+    if(DEBUGMODE == 1) begin
+        if(DUT.Controlpath.FSM.state == 3'h1) begin
+            $display("-------------------------Config----------------------------------");
+            $display("total len: %s", total_len);
+            $display("x: %f, x2: %f, paso: %d", $itor(DUT.Datapath_I.x*SF), $itor(DUT.Datapath_I.x2*SF), $itor(DUT.Controlpath.next_state_logic.ilen));
+            if(config_reg0[0] == 0) begin
+                $display("Bypass = OFF");
+            end
+            else begin
+                $display("Bypass = ON");
+            end
         end
-        else begin
-            $display("Bypass = ON");
+        if(DUT.Datapath_I.op_1 == 1) begin
+            $display("-----------------------------------------------------------------");
+            $display("m0: %f, m1: %f, m2: %f", $itor(DUT.Datapath_I.m0*SF), $itor(DUT.Datapath_I.m1*SF), $itor(DUT.Datapath_I.m2*SF));
+            $display("------------------Valores intermedios----------------------------");
+            $display("m0 + m2     = %f", $itor(DUT.Datapath_I.m2_m0*SF));
+            $display("(m0 + m2)/2 = %f", $itor(DUT.Datapath_I.m2_m0_div2*SF));
+            $display("2*m1        = %f", $itor(DUT.Datapath_I.t2_m1*SF));
+            $display("2*m1 - m0   = %f", $itor(DUT.Datapath_I.t2_m1_m0*SF));
+            $display("----------------------Coeficientes-------------------------------");
+            $display("p0 = %f", $itor(DUT.Datapath_I.m0*SF));
+            $display("p1 = %f", $itor(DUT.Datapath_I.p1*SF));
+            $display("p2 = %f", $itor(DUT.Datapath_I.p2*SF));
+            $display("-----------------------------------------------------------------");
         end
-    end
-    if(DUT.Datapath_I.op_1 == 1) begin
-        $display("-----------------------------------------------------------------");
-        $display("m0: %f, m1: %f, m2: %f", $itor(DUT.Datapath_I.m0*SF), $itor(DUT.Datapath_I.m1*SF), $itor(DUT.Datapath_I.m2*SF));
-        $display("------------------Valores intermedios----------------------------");
-        $display("m0 + m2     = %f", $itor(DUT.Datapath_I.m2_m0*SF));
-        $display("(m0 + m2)/2 = %f", $itor(DUT.Datapath_I.m2_m0_div2*SF));
-        $display("2*m1        = %f", $itor(DUT.Datapath_I.t2_m1*SF));
-        $display("2*m1 - m0   = %f", $itor(DUT.Datapath_I.t2_m1_m0*SF));
-        $display("----------------------Coeficientes-------------------------------");
-        $display("p0 = %f", $itor(DUT.Datapath_I.m0*SF));
-        $display("p1 = %f", $itor(DUT.Datapath_I.p1*SF));
-        $display("p2 = %f", $itor(DUT.Datapath_I.p2*SF));
-        $display("-----------------------------------------------------------------");
     end
 end
 
@@ -343,11 +371,6 @@ module M_mem #(
 
     always @(posedge clk) begin
             data_out <= mem[M_addr];
-    end
-
-    initial begin
-        // $readmemh("../signal_test.ipd", mem);
-         $readmemh("../OutputSine.txt", mem);
     end
 
 endmodule

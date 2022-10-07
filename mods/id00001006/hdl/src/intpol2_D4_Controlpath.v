@@ -1,5 +1,5 @@
 module intpol2_D4_Controlpath #(
-    parameter   DATA_WIDTH  =  32,
+    parameter   DATAPATH_WIDTH  =  32,
     parameter   CONFIG_WIDTH = 32
 )(
     input                                 clk, 
@@ -37,7 +37,7 @@ wire en_M_addr;
 
 
 intpol2_D4_nxt_ste_lgc#(
-    .DATA_WIDTH     ( DATA_WIDTH     ),
+    .DATAPATH_WIDTH     ( DATAPATH_WIDTH     ),
     .CONFIG_WIDTH   ( CONFIG_WIDTH   )
 )next_state_logic(
     .clk            ( clk            ),

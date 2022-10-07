@@ -1,5 +1,5 @@
 module intpol2_D4_nxt_ste_lgc#(
-    parameter   DATA_WIDTH  =  32,
+    parameter   DATAPATH_WIDTH  =  32,
     parameter   CONFIG_WIDTH = 32 
 )(
     input                                 clk, rstn,
@@ -58,7 +58,7 @@ always @(posedge clk or negedge rstn or posedge clear) begin
         // end
 
         if(done) begin
-            cnt    = {DATA_WIDTH{1'b0}};
+            cnt    = {DATAPATH_WIDTH{1'b0}};
         end 
         else begin   
             if(en_sum) 
