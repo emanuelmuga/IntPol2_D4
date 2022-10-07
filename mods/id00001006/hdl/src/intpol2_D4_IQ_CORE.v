@@ -9,16 +9,17 @@
     
     Description   : Obtine los valores interpolados entre tres datos de entrada, M0, M1, M2.
                     Utilizando solo un multiplicador.
-                    Realiza la aproximación con: y = p0 + p1*xi + p2*(xi)^2.
+                    Realiza la aproximación con: y = p0 + p1*xi + p2*(xi)^2. Donde pi son los
+                    coeficientes calculados "On-the-fly" y xi el factor de interpolación.
                     Se tiene dos entradas, una en Fase (I) y otra en cuadratura (Q).
 -----------------------------------------------------------------------------------------------                    
     Clocks        : posedge "clk"
-    Reset         : Async posedge "rstn"
+    Reset         : Async negedge "rstn"
     Parameters    :
 
                     NAME                          Comments                             
                     -------------------------------------------------------------
-                    DATAPATH_WIDTH                    Tamaño de palabra
+                    DATAPATH_WIDTH                Tamaño de palabra
                     CONFIG_WIDTH                  Tamaño de palabra del config_reg/4
                     N_bits                        No. bits de aumento del datapath
                     M_bits                        No. bits parte frac. 
@@ -29,7 +30,6 @@
                     ilen   = config_reg3[31:0];   Duración de iteración LENGHT 
                                         
                     -------------------------------------------------------------
-
     status_reg    :  status_reg[0] = done;
                      status_reg[1] = busy;
                      status_reg[2] = stop_empty;
@@ -38,14 +38,15 @@
 -------------------------------------------------------------------------------------------------
     Version        : 1.0
     Date           : 21 Sep 2022
+    Last update    : 7 Oct 2022
 =================================================================================================            
 */
 
 module intpol2_D4_IQ_CORE #(
     parameter   CONFIG_WIDTH   =  32,                          // tamaño de palabra de config reg
-    parameter   DATAPATH_WIDTH =  32,                          // tamaño datapath
+    parameter   DATAPATH_WIDTH =  12,                          // tamaño datapath
     parameter   N_bits         =  2,                           // Aumento de datapath
-    parameter   M_bits         =  31                           // Parte decimal
+    parameter   M_bits         =  11                           // Parte decimal
 )
 (     
     input                                   clk,
@@ -63,12 +64,17 @@ module intpol2_D4_IQ_CORE #(
     output wire signed [DATAPATH_WIDTH-1:0] Q_interp                // Result Q                                            
 );
 
+wire  signed [DATAPATH_WIDTH-1:0] max_Thold;
+wire  signed [DATAPATH_WIDTH-1:0] min_Thold;
+
 //-----------------------Connection signals--------------------//
 wire  [CONFIG_WIDTH-1:0]   ilen;
 wire  [DATAPATH_WIDTH-1:0] iX;  
 wire  [DATAPATH_WIDTH-1:0] iX2;  
 wire  [DATAPATH_WIDTH-1:0] data_I;
 wire  [DATAPATH_WIDTH-1:0] data_Q;
+// wire  [DATAPATH_WIDTH-1:0] s_I;
+// wire  [DATAPATH_WIDTH-1:0] data_Q;
 
 wire  [CONFIG_WIDTH-1:0]   config_reg0;
 wire  [CONFIG_WIDTH-1:0]   config_reg1;
@@ -124,6 +130,10 @@ assign Q_interp          = bypass            ? data_in_from_fifo_Q : data_Q;
 
 //-------------------------------------------------------------//
 
+assign min_Thold = {1'b1,{DATAPATH_WIDTH-1{1'b0}}};
+assign max_Thold = {1'b0,{DATAPATH_WIDTH-1{1'b1}}};
+
+//-------------------------------------------------------------//
 intpol2_D4_Datapath#(
     .DATAPATH_WIDTH  ( DATAPATH_WIDTH      ),
     .N_bits          ( N_bits              ),
@@ -142,6 +152,8 @@ intpol2_D4_Datapath#(
     .sel_mult        ( sel_mult            ),
     .op_1            ( op_1                ),
     .sel_xi2         ( sel_xi2             ), 
+    .min_Thold       ( min_Thold           ),
+    .max_Thold       ( max_Thold           ),
     .data_to_process ( data_in_from_fifo_I ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
@@ -165,7 +177,9 @@ intpol2_D4_Datapath#(
     .Ld_data         ( Ld_data             ),
     .sel_mult        ( sel_mult            ),
     .op_1            ( op_1                ),
-    .sel_xi2         ( sel_xi2             ), 
+    .sel_xi2         ( sel_xi2             ),
+    .min_Thold       ( min_Thold           ),
+    .max_Thold       ( max_Thold           ), 
     .data_to_process ( data_in_from_fifo_Q ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),

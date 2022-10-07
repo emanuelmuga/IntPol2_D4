@@ -21,11 +21,13 @@ add wave -noupdate -divider FIFO_IN
 add wave -noupdate /intpol2_D4_IQ_tb/FIFO_I_in/Write_enable_i
 add wave -noupdate -radix hexadecimal /intpol2_D4_IQ_tb/FIFO_Q_in/Write_enable_i
 add wave -noupdate /intpol2_D4_IQ_tb/FIFO_I_in/Almost_Empty_o
-add wave -noupdate -format Analog-Step -height 88 -max -1862.0 -min -1946.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_I_out/data_output__o
 add wave -noupdate -divider FIFO_OUT
-add wave -noupdate -format Analog-Step -height 88 -max 727.0 -min 643.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_Q_out/data_output__o
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_I_in/data_output__o
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_I_out/data_input___i
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_Q_in/data_output__o
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_Q_out/data_input___i
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {4429621280 ps} 0}
+WaveRestoreCursors {{Cursor 1} {6464701869 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 314
 configure wave -valuecolwidth 100
@@ -41,4 +43,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {3683974425 ps} {3699479015 ps}
+WaveRestoreZoom {1117554650 ps} {1177870195 ps}

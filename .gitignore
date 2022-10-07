@@ -3,6 +3,7 @@
 /output_files
 /mods/id00001006/hdl/sim/modelsim
 /simulation
+/tcl
 *.qpf
 *.qsf
 *.qws
@@ -10,3 +11,4 @@
 *.wlf
 *.mpf
 *.mti
+.*rpt

@@ -24,9 +24,9 @@ module ID00001006_intpol2_V4_IQ(
 
 
   localparam DATA_WIDTH      = 32;
-  localparam DATAPATH_WIDTH  = 32;
-  localparam N_bits          = 2;     // Numero de bits parte entera
-  localparam M_bits          = 31;    // Numero de bits parte entera
+  localparam DATAPATH_WIDTH  = 12;
+  localparam N_bits          = 2;     // Numero de bits parte ++entera
+  localparam M_bits          = 11;    // Numero de bits parte fraccional
   localparam CONFIG_WIDTH    = 5;
   localparam FIFO_ADDR_WIDTH = 3; 
 
