@@ -65,7 +65,7 @@ reg signed  [DATAPATH_WIDTH+N_bits-1:0] p1_xi;                           // p1 *
 assign x_w   = {{N_bits{1'b0}},x};
 assign x2_w  = {{N_bits{1'b0}},x2};
 
-
+//---------------------Saturation Stage-------------------------------------------------
 assign SbA   = out_ff[DATAPATH_WIDTH-1];
 assign SbB   = out_ff[DATAPATH_WIDTH-2];
 assign SbC   = data_reg[DATAPATH_WIDTH-1];
@@ -77,14 +77,14 @@ assign saturation_min    =  SbA  & ~SbB & ~SbC &  SbD; //AB'C'D  | 10 -> 01
 
 assign data_out = saturation_min ? min_Thold   : 
                   saturation_max ? max_Thold   : data_reg;
-
+//-------------------------------------------------------------------------------------
 always @(posedge clk, negedge rstn) begin
     if(!rstn) begin
         p1_xi      <=  {DATAPATH_WIDTH+N_bits{1'b0}};
         m0          =  {DATAPATH_WIDTH+N_bits{1'b0}};
         m1          =  {DATAPATH_WIDTH+N_bits{1'b0}};
         m2          =  {DATAPATH_WIDTH+N_bits{1'b0}};
-        out_ff      <=  {DATAPATH_WIDTH+N_bits{1'b0}};
+        out_ff      <=  {DATAPATH_WIDTH{1'b0}};
         data_reg    <=  {DATAPATH_WIDTH{1'b0}};
     end    
     else begin

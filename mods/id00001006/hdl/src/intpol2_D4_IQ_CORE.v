@@ -64,9 +64,6 @@ module intpol2_D4_IQ_CORE #(
     output wire signed [DATAPATH_WIDTH-1:0] Q_interp                // Result Q                                            
 );
 
-wire  signed [DATAPATH_WIDTH-1:0] max_Thold;
-wire  signed [DATAPATH_WIDTH-1:0] min_Thold;
-
 //-----------------------Connection signals--------------------//
 wire  [CONFIG_WIDTH-1:0]   ilen;
 wire  [DATAPATH_WIDTH-1:0] iX;  
@@ -104,6 +101,9 @@ wire          [1:0]        sel_xi2;
 wire                       FIFO_bypass;
 
 //-------------------------------------------------------------//
+wire  signed [DATAPATH_WIDTH-1:0] max_Thold;
+wire  signed [DATAPATH_WIDTH-1:0] min_Thold;
+
 
 assign config_reg0   = config_reg[CONFIG_WIDTH-1:0]; 
 assign config_reg1   = config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH];
