@@ -6,6 +6,7 @@ module Sink_sim #(
     input clk,
     input rstn,
     input start_i,
+    input nop,
     input Empty_i,
     input [ADDR_WIDTH-1:0]ilen,
     output reg [ADDR_WIDTH-1:0] addr,
@@ -58,22 +59,29 @@ done           <= 1'b0;
               end
     READ_WRITE:begin
                 done            <= 1'b0;
-                if(comp_addr) begin
-                    next_state    <= DONE;
+                if(nop) begin
+                    next_state    <= READ_WRITE;
                     addr_en       <= 1'b0;
                     Read_Enable_o <= 1'b0;
                 end
                 else begin
-                    if(Empty_i) begin
+                    if(comp_addr) begin
+                        next_state    <= DONE;
                         addr_en       <= 1'b0;
                         Read_Enable_o <= 1'b0;
                     end
                     else begin
-                        addr_en       <= 1'b1; //<--
-                        Read_Enable_o <= 1'b1; //<--
-                    end
-                    next_state    <= READ_WRITE; 
-                end 
+                        if(Empty_i) begin
+                            addr_en       <= 1'b0;
+                            Read_Enable_o <= 1'b0;
+                        end
+                        else begin
+                            addr_en       <= 1'b1; //<--
+                            Read_Enable_o <= 1'b1; //<--
+                        end
+                        next_state    <= READ_WRITE; 
+                    end 
+                end
              end
        DONE: begin
                 done           <= 1'b1;

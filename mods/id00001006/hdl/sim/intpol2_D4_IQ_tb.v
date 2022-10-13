@@ -1,6 +1,4 @@
 `timescale 1ns/100ps
- `include "Sink_sim.v"
- `include "Source_sim.v"
 
 module intpol2_D4_IQ_tb();
 
@@ -12,6 +10,7 @@ localparam   FIFO_ADDR_WIDTH = 3;
 localparam   ADDR_WIDTH      = $clog2(2**20);         // Tamaño de memoria de almacenamiento de la señal
 localparam   SF              = 2.0**-(M_bits);        //scaling factor (printing matters)
 
+localparam   DELAY_WIDTH     = 13;
 localparam   DEBUGMODE       = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
 localparam   BYPASS          = 0;   //bypass   ~OFF/ON           
 
@@ -67,6 +66,8 @@ wire [ADDR_WIDTH-1:0] total_len;
 
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
 reg [CONFIG_WIDTH-1:0] signal_len [0:1];
+reg [DELAY_WIDTH-1:0] delay_cc;
+reg nop;
 
 integer fd;
 integer i;
@@ -143,6 +144,7 @@ Sink_sim#(
     .clk            ( clk            ),
     .rstn           ( rstn           ),
     .start_i        ( start          ),
+    .nop            (nop             ),
     .Empty_i        ( Empty_fifo_out ),
     .ilen           ( total_len      ),
     .addr           ( Y_addr         ),
@@ -260,15 +262,21 @@ initial
         forever clk = #5 ~clk;
     end
 
-// task write_fifo_in_cc_delay (input [DATA_WIDTH-1:0] data_in, input [5:0] cc_delay);
-//     begin
-//         #(cc_delay*10)
-//         WE_fifo_in = 1'b1;
-//         data_in_fifo = data_in;
-//         #10;
-//         WE_fifo_in = 1'b0;
-//     end
-// endtask
+task DO_delay (input [DELAY_WIDTH-1:0] delay_cc);
+    begin
+        nop = 1'b1;
+        #(delay_cc*10)
+        nop = 1'b0;
+    end
+endtask
+
+task DO_start();
+    begin
+        start = 1'b1;
+        #10;
+        start = 1'b0;
+    end
+endtask
 
 //------------------Ejemplo del registro de Configuracion----------------
 // config_reg0[0]     = 0;                                     //bypass                      
@@ -291,6 +299,7 @@ begin
     
     rstn = 1;
     en = 0;
+    nop = 1'b0;
     start = 0;
     #10;
     rstn = 0;
@@ -301,7 +310,22 @@ begin
     #10;
     en = 1;
     start = 0;
-
+    #($urandom%(2**DELAY_WIDTH)*10);
+    DO_delay($urandom%(2**DELAY_WIDTH));
+    #($urandom%(2**DELAY_WIDTH)*10);
+    DO_delay($urandom%(2**DELAY_WIDTH));
+    #($urandom%(2**DELAY_WIDTH)*10);
+    DO_delay($urandom%(2**DELAY_WIDTH));
+    #($urandom%(2**DELAY_WIDTH)*10);
+    #10;
+    start = 1'b1;
+    #10;
+    start = 1'b0;
+    #($urandom%(2**DELAY_WIDTH)*10); 
+    fork 
+    DO_delay(1000);
+    #(500*10) DO_start(); 
+    join
 end
 
 always @(done_sink) begin
