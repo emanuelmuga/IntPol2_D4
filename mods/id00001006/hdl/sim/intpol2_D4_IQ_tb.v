@@ -221,38 +221,38 @@ DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,                  // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
 ) FIFO_I_out (
-    .Write_clock__i   ( clk              ),    // posedge active
-    .Write_enable_i   (	WE_fifo_out      ),    // High active
-    .rst_async_la_i   ( rstn		     ),    // Asynchronous reset low active for reader clock
-    .Read_clock___i   ( clk              ),    // Posedge active 
-    .Read_enable__i   ( RE_fifo_out      ),    // High active
-    .differenceAF_i   (	3'h2             ),    // Difference (memory locations) between AF & Full flag
-    .differenceAE_i   (	3'h2             ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	I_interp         ),
+    .Write_clock__i   ( clk                  ),    // posedge active
+    .Write_enable_i   (	WE_fifo_out          ),    // High active
+    .rst_async_la_i   ( rstn		         ),    // Asynchronous reset low active for reader clock
+    .Read_clock___i   ( clk                  ),    // Posedge active 
+    .Read_enable__i   ( RE_fifo_out          ),    // High active
+    .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
+    .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
+    .data_input___i   (	I_interp             ),
     .data_output__o   (	data_out_from_fifo_I ),
-    .Empty_Indica_o   (	Empty_fifo_out   ),    // Empty FIFO indicator synchronized with Read clock
-    .Full_Indicat_o   (		             ),    // Set by the write clock and cleared by the reading clock
-    .Almost_Full__o   (	Almost_Full_I    ),    
-    .Almost_Empty_o   (		             )
+    .Empty_Indica_o   (	Empty_fifo_out       ),    // Empty FIFO indicator synchronized with Read clock
+    .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
+    .Almost_Full__o   (	Almost_Full_I        ),    
+    .Almost_Empty_o   (		                 )
 );
 
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,              // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
 ) FIFO_Q_out (
-    .Write_clock__i   ( clk              ),    // posedge active
-    .Write_enable_i   (	WE_fifo_out      ),    // High active
-    .rst_async_la_i   ( rstn		     ),    // Asynchronous reset low active for reader clock
-    .Read_clock___i   ( clk              ),    // Posedge active 
-    .Read_enable__i   ( RE_fifo_out      ),    // High active
-    .differenceAF_i   (	3'h2             ),    // Difference (memory locations) between AF & Full flag
-    .differenceAE_i   (	3'h2             ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	Q_interp         ),
+    .Write_clock__i   ( clk                   ),    // posedge active
+    .Write_enable_i   (	WE_fifo_out           ),    // High active
+    .rst_async_la_i   ( rstn		          ),    // Asynchronous reset low active for reader clock
+    .Read_clock___i   ( clk                   ),    // Posedge active 
+    .Read_enable__i   ( RE_fifo_out           ),    // High active
+    .differenceAF_i   (	3'h2                  ),    // Difference (memory locations) between AF & Full flag
+    .differenceAE_i   (	3'h2                  ),    // Difference (memory locations) between AE & Empty flag
+    .data_input___i   (	Q_interp              ),
     .data_output__o   (	data_out_from_fifo_Q  ),
-    .Empty_Indica_o   (	     	         ),    // Empty FIFO indicator synchronized with Read clock
-    .Full_Indicat_o   (		             ),    // Set by the write clock and cleared by the reading clock
-    .Almost_Full__o   (	Almost_Full_Q    ),    
-    .Almost_Empty_o   (		             )
+    .Empty_Indica_o   (	     	              ),    // Empty FIFO indicator synchronized with Read clock
+    .Full_Indicat_o   (		                  ),    // Set by the write clock and cleared by the reading clock
+    .Almost_Full__o   (	Almost_Full_Q         ),    
+    .Almost_Empty_o   (		                  )
 );
 
 
@@ -279,17 +279,23 @@ task DO_start();
 endtask
 
 //------------------Ejemplo del registro de Configuracion----------------
-// config_reg0[0]     = 0;                                     //bypass                      
-// config_reg1[31:0]  = 32'b0_0000100111011000100111011000100; //iX  =  1/26         
-// config_reg2[31:0]  = 32'b0_0000000001100000111100100101100; //iX2 = (1/26)^2   
-// config_reg3[31:0]  = 32'b0_000000000000000000000_0001_1010; //len = 26
+// localparam   CONFIG_WIDTH    =  32;
+// localparam   DATAPATH_WIDTH  =  12; 
+// localparam   N_bits          =  2;                    //N <= parte entera++
+// localparam   M_bits          =  11;                   //M = parte decimal
+
+// config_reg0[0]     = 0;                                           //bypass                      
+// config_reg1[31:0]  = {20'b00000000000000000000,12'b000110011001}; //iX  =  1/10        
+// config_reg2[31:0]  = {20'b00000000000000000000,12'b000010100011}; //iX2 = (1/10)^2   
+// config_reg3[31:0]  = 32'b0_00000000000000000000000001010;         //len = 10
+//--------------------------------------------------------------------------
 
 initial
 begin 
-    $readmemh("../OutputCos.txt", M_MEM_I.mem);
-    $readmemh("../OutputSine.txt", M_MEM_Q.mem);
-    $readmemh("../config.ipd", mem_config);
-    $readmemh("../signal_len.txt", signal_len);  // tamano de senal 
+    $readmemh("OutputCos.txt", M_MEM_I.mem);
+    $readmemh("OutputSine.txt", M_MEM_Q.mem);
+    $readmemh("config.txt", mem_config);
+    $readmemh("signal_len.txt", signal_len);  // tamano de senal 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
 
     config_reg0 = mem_config[0];

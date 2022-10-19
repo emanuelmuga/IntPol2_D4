@@ -26,9 +26,9 @@ add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radi
 add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_I_out/data_input___i
 add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_Q_in/data_output__o
 add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_IQ_tb/FIFO_Q_out/data_input___i
-add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 /intpol2_D4_IQ_tb/DUT/Datapath_Q/data_reg
+add wave -noupdate -format Analog-Step -height 88 -label {Saturated signal} -max 2047.0 -min -2048.0 /intpol2_D4_IQ_tb/DUT/Datapath_Q/data_reg
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {4348321 ps} 0}
+WaveRestoreCursors {{Cursor 1} {575610000 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 314
 configure wave -valuecolwidth 100
@@ -44,4 +44,5 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {0 ps} {99565853 ps}
+WaveRestoreZoom {567039106 ps} {666604959 ps}
+run 1ms

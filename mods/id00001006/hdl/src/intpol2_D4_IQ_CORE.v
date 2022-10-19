@@ -11,7 +11,7 @@
                     Utilizando solo un multiplicador.
                     Realiza la aproximación con: y = p0 + p1*xi + p2*(xi)^2. Donde pi son los
                     coeficientes calculados "On-the-fly" y xi el factor de interpolación.
-                    Se tiene dos entradas, una en Fase (I) y otra en cuadratura (Q).
+                    Se tiene dos entradas y dos salidas, en Fase (I) y en cuadratura (Q).
 -----------------------------------------------------------------------------------------------                    
     Clocks        : posedge "clk"
     Reset         : Async negedge "rstn"
