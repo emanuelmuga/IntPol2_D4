@@ -195,18 +195,6 @@ intpol2_D4_mult_by_add#(
 );
 
 //--------------------------- xi^2 -----------------------//
-// intpol2_D4_squared#(
-//     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
-//     .MEM_SIZE_Y ( MEM_SIZE_Y )
-// )Squared(
-//     .clk        ( clk        ),
-//     .rstn       ( rstn       ),
-//     .clear      ( clear      ),
-//     .en_cnt     ( en_sum     ),
-//     .cnt        ( cnt        ),
-//     .x2         ( x2         ),
-//     .xi2        ( xi2        )
-// );
 
 intpol2_D4_squared#(
     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),

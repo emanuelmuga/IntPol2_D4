@@ -1,4 +1,4 @@
-module ID00001006_intpol2_V4_IQ(
+module ID00001006_intpol2_D4(
   clk,
   rst_a,
   en_s,
@@ -109,7 +109,7 @@ ID00001006_aip INTERFACE(
 
 
 
-intpol2_D4_IQ_CORE#(
+intpol2_D4_CORE#(
     .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
     .N_bits              ( N_bits              ),
     .M_bits              ( M_bits              )

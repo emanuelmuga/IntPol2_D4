@@ -1,10 +1,12 @@
 module intpol2_D4_Controlpath #(
-    parameter   DATAPATH_WIDTH  =  32,
-    parameter   CONFIG_WIDTH = 32
+    parameter   DATAPATH_WIDTH  = 32,
+    parameter   CONFIG_WIDTH    = 32,
+    parameter  MEM_ADDR_WIDTH   = 16
 )(
     input                                 clk, 
     input                                 rstn, 
     input                                 start,
+    input                                 mode,
     input                                 Empty_i,
     input                                 Afull_i,
     input          [CONFIG_WIDTH-1:0]     ilen,
@@ -16,8 +18,12 @@ module intpol2_D4_Controlpath #(
     output wire             [1:0]         sel_xi2,
     output wire                           FIFO_bypass,
     output wire                           busy,
-    output wire                           Write_Enable_w,
-    output wire                           Read_Enable_w, 
+    output wire                           Write_Enable,
+    output wire                           Write_bypass_mem,
+    output wire                           Read_Enable,
+    output wire  [MEM_ADDR_WIDTH-1:0]     Y_addr,
+    output wire  [MEM_ADDR_WIDTH-1:0]     Y_addr_bypass,        
+    output wire  [MEM_ADDR_WIDTH-1:0]     M_addr, 
     output wire                           Ld_p1_xi, 
     output wire                           en_sum,
     output wire                           en_stream,      
@@ -37,28 +43,33 @@ wire en_M_addr;
 
 
 intpol2_D4_nxt_ste_lgc#(
-    .DATAPATH_WIDTH     ( DATAPATH_WIDTH     ),
-    .CONFIG_WIDTH   ( CONFIG_WIDTH   )
+    .DATAPATH_WIDTH     ( DATAPATH_WIDTH ),
+    .MEM_ADDR_WIDTH     ( MEM_ADDR_WIDTH ),
+    .CONFIG_WIDTH       ( CONFIG_WIDTH   )
 )next_state_logic(
-    .clk            ( clk            ),
-    .rstn           ( rstn           ),
-    .clear          ( clear          ),
-    .Empty          ( Empty_i        ),
-    .Afull          ( Afull_i        ),
-    .busy           ( busy           ),
-    .en_sum         ( en_sum         ),
-    .Read_Enable    ( Read_Enable_w  ),
-    .Write_Enable   ( Write_Enable_w ),
-    .en_M_addr      ( en_M_addr      ),
-    .done           ( done           ),
-    .ilen           ( ilen           ),
-    .comp_cnt       ( comp_cnt       ),
-    .comp_addr      ( comp_addr      ),
-    .Ld_M0          ( Ld_M0          ),
-    .Ld_M1          ( Ld_M1          ),
-    .Ld_M2          ( Ld_M2          ),
-    .sel_xi2        ( sel_xi2        ),
-    .FIFO_bypass    ( FIFO_bypass    )
+    .clk              ( clk              ),
+    .rstn             ( rstn             ),
+    .clear            ( clear            ),
+    .Empty            ( Empty_i          ),
+    .Afull            ( Afull_i          ),
+    .busy             ( busy             ),
+    .en_sum           ( en_sum           ),
+    .Read_Enable      ( Read_Enable      ),
+    .Write_Enable     ( Write_Enable     ),
+    .en_M_addr        ( en_M_addr        ),
+    .done             ( done             ),
+    .ilen             ( ilen             ),
+    .comp_cnt         ( comp_cnt         ),
+    .comp_addr        ( comp_addr        ),
+    .Y_addr           ( Y_addr           ),
+    .Y_addr_bypass    ( Y_addr_bypass    ),
+    .M_addr           ( M_addr           ),
+    .Ld_M0            ( Ld_M0            ),
+    .Ld_M1            ( Ld_M1            ),
+    .Ld_M2            ( Ld_M2            ),
+    .sel_xi2          ( sel_xi2          ),
+    .Write_bypass_mem ( Write_bypass_mem ),
+    .FIFO_bypass      ( FIFO_bypass      )
 );
 
 
@@ -74,9 +85,9 @@ intpol2_D4_fsm FSM(
     .comp_cnt     ( comp_cnt       ),
     .comp_addr    ( comp_addr      ),
     .busy         ( busy           ),
-    .Write_Enable ( Write_Enable_w ),
+    .Write_Enable ( Write_Enable   ),
     .Ld_data      ( Ld_data        ),
-    .Read_Enable  ( Read_Enable_w  ),
+    .Read_Enable  ( Read_Enable    ),
     .Ld_p1_xi     ( Ld_p1_xi       ),
     .en_M_addr    ( en_M_addr      ),
     .en_sum       ( en_sum         ),

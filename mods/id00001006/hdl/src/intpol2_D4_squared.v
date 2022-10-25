@@ -2,9 +2,9 @@ module intpol2_D4_squared#(
     parameter  DATAPATH_WIDTH   = 32,
     parameter  N_bits = 2
 )(
-    input                                      clk, rstn, clear,
-    input                                      en_xi2,
-    input              [1:0]                   sel_xi2,
+    input                                          clk, rstn, clear,
+    input                                          en_xi2,
+    input              [1:0]                       sel_xi2,
     input       signed [DATAPATH_WIDTH+N_bits-1:0] x2,
     output reg  signed [DATAPATH_WIDTH+N_bits-1:0] xi2
 );

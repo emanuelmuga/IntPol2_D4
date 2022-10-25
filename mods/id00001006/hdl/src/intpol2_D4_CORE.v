@@ -4,7 +4,7 @@
     Contact       : emanuel.murillo@cinvestav.mx
                     emanuel.muga13@gmail.com
 
-    Module Name   : intpol2_D4_IQ_CORE (TOP), Interpolador Cuadratico Diseño IV IQ
+    Module Name   : intpol2_D4_CORE (TOP), Interpolador Cuadratico Diseño IV IQ
     Type          : Verilog module
     
     Description   : Obtine los valores interpolados entre tres datos de entrada, M0, M1, M2.
@@ -24,9 +24,10 @@
                     N_bits                        No. bits de aumento del datapath
                     M_bits                        No. bits parte frac. 
                     -------------------------------------------------------------
-    Config_reg    : bypass = config_reg0[0];                                  
-                    iX     = config_reg1[31:0];  Factor de interpolacion  
-                    iX2    = config_reg2[31:0];  Factor de interpolacion^2          
+    Config_reg    : bypass = config_reg0[0]; 
+                    mode   = config_reg0[1];      Modo de operacion Accel/streaming                           
+                    iX     = config_reg1[31:0];   Factor de interpolacion  
+                    iX2    = config_reg2[31:0];   Factor de interpolacion^2          
                     ilen   = config_reg3[31:0];   Duración de iteración LENGHT 
                                         
                     -------------------------------------------------------------
@@ -36,59 +37,65 @@
                      status_reg[3] = stop_Afull;
                      status_reg[5] = bypass;                      
 -------------------------------------------------------------------------------------------------
-    Version        : 1.0
+    Version        : 2.0
     Date           : 21 Sep 2022
-    Last update    : 7 Oct 2022
+    Last update    : 25 Oct 2022
 =================================================================================================            
 */
 
-module intpol2_D4_IQ_CORE #(
-    parameter   CONFIG_WIDTH   =  32,                          // tamaño de palabra de config reg
-    parameter   DATAPATH_WIDTH =  12,                          // tamaño datapath
-    parameter   N_bits         =  2,                           // Aumento de datapath
-    parameter   M_bits         =  11                           // Parte decimal
+module intpol2_D4_CORE #(
+    parameter   CONFIG_WIDTH       =  32,                          // tamaño de palabra de config reg
+    parameter   DATAPATH_WIDTH     =  12,                          // tamaño datapath
+    parameter   N_bits             =  2,                           // Aumento de datapath
+    parameter   M_bits             =  11,                          // Parte decimal
+    parameter   MEM_ADDR_WIDTH     =  16
 )
 (     
     input                                   clk,
     input                                   rstn, 
     input                                   start,
-    input                                   Empty_i,                //Fifo empty
-    input                                   Afull_i,                //Almost full  
-    input              [128-1:0]            config_reg,   
-    input       signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_I,    // entrada desde FIFO_I   
-    input       signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_Q,    // entrada desde FIFO_Q   
-    output wire                             Write_Enable_fifo,      
-    output wire                             Read_Enable_fifo,       
-    output wire        [8-1:0]              status_reg,
-    output wire signed [DATAPATH_WIDTH-1:0] I_interp,               // Result I   
-    output wire signed [DATAPATH_WIDTH-1:0] Q_interp                // Result Q                                            
+    input                                   Empty_i,            // Fifo_in empty
+    input                                   Afull_i,            // Fifo_out Almost full  
+    input              [128-1:0]            config_reg,         // Configuracion
+    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_I,   // entrada desde FIFO_I   
+    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_Q,   // entrada desde FIFO_Q
+    output wire        [MEM_ADDR_WIDTH-1:0] Read_addr_mem,      // Addr Mem_in
+    output wire        [MEM_ADDR_WIDTH-1:0] Write_addr_mem,     // Addr Mem_out
+    output wire                             Write_Enable_mem,   // Write Enable Mem_out   
+    output wire                             Write_Enable_fifo,  
+    output wire                             Read_Enable_fifo,   
+    output wire        [8-1:0]              status_reg,         
+    output wire signed [DATAPATH_WIDTH-1:0] I_interp,           // Result I   
+    output wire signed [DATAPATH_WIDTH-1:0] Q_interp            // Result Q                                            
 );
 
 //-----------------------Connection signals--------------------//
+wire                       mode;                             // Selección de modo Accel./Stream  
 wire  [CONFIG_WIDTH-1:0]   ilen;
 wire  [DATAPATH_WIDTH-1:0] iX;  
 wire  [DATAPATH_WIDTH-1:0] iX2;  
 wire  [DATAPATH_WIDTH-1:0] data_I;
 wire  [DATAPATH_WIDTH-1:0] data_Q;
-// wire  [DATAPATH_WIDTH-1:0] s_I;
-// wire  [DATAPATH_WIDTH-1:0] data_Q;
 
 wire  [CONFIG_WIDTH-1:0]   config_reg0;
 wire  [CONFIG_WIDTH-1:0]   config_reg1;
 wire  [CONFIG_WIDTH-1:0]   config_reg2;
 wire  [CONFIG_WIDTH-1:0]   config_reg3;
-//-----------------------Control signals-----------------------//
-wire                       en_sum;                           //enable del cnt y de la multi por sumatoria.
-wire                       en_stream;
-wire                       op_1;                       
-wire                       sel_mult;                         //selector de entradas del multi_mux
-wire                       Ld_M0;
-wire                       Ld_M1;
-wire                       Ld_M2;
-wire                       Ld_data;
-wire                       Ld_p1_xi;
-wire                       Read_Enable_w;
-wire                       Write_Enable_w;
+wire                       en_sum;                           // enable del cnt y de la multi por sumatoria.
+wire  [MEM_ADDR_WIDTH-1:0] M_addr;                           // Addr for Mem_in.
+wire  [MEM_ADDR_WIDTH-1:0] Y_addr;                           // Addr for Mem_out.
+wire  [MEM_ADDR_WIDTH-1:0] Y_addr_bypass;                    // Addr bypass for Mem_out.
+wire                       en_stream;                        // stream flow control.
+wire                       op_1;                             // calculo de coeficientes flag.   
+wire                       sel_mult;                         // selector de entradas del multi_mux (reutilizacion del mult)
+wire                       Ld_M0;                            // carga muestra 0.
+wire                       Ld_M1;                            // carga muestra 1.  
+wire                       Ld_M2;                            // carga muestra 2. 
+wire                       Ld_data;                          // carga resultado.
+wire                       Ld_p1_xi;                         // carga el valor p1*xi
+wire                       Write_bypass_mem                  // Write enable signal to Mem_out
+wire                       Read_Enable;
+wire                       Write_Enable;
 
 //-----------------------Status signals------------------------//
 wire                       done;
@@ -100,7 +107,7 @@ wire                       stop_Afull;
 wire          [1:0]        sel_xi2;
 wire                       FIFO_bypass;
 
-//-------------------------------------------------------------//
+//---------------------Saturation threshold--------------------//
 wire  signed [DATAPATH_WIDTH-1:0] max_Thold;
 wire  signed [DATAPATH_WIDTH-1:0] min_Thold;
 
@@ -111,6 +118,7 @@ assign config_reg2   = config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2];
 assign config_reg3   = config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3];
 
 assign bypass        = config_reg0[0];
+assign mode          = config_reg0[1];
 assign iX            = config_reg1[DATAPATH_WIDTH-1:0];
 assign iX2           = config_reg2[DATAPATH_WIDTH-1:0];
 assign ilen          = config_reg3[CONFIG_WIDTH-1:0];
@@ -119,16 +127,26 @@ assign status_reg[0] = done;
 assign status_reg[1] = busy;
 assign status_reg[2] = stop_empty;
 assign status_reg[3] = stop_Afull;
+assign status_reg[4] = mode;
 assign status_reg[5] = bypass;  
 
-//--------------------------Bypass Muxes------------------------//
+//--------------------------Output Muxes-----------------------//
+assign Read_addr_mem     = M_addr;
 
-assign Read_Enable_fifo  = Read_Enable_w;                
-assign Write_Enable_fifo = bypass            ? FIFO_bypass         : Write_Enable_w;                          
-assign I_interp          = bypass            ? data_in_from_fifo_I : data_I;
-assign Q_interp          = bypass            ? data_in_from_fifo_Q : data_Q;
+assign Write_addr_mem    = bypass  ? Y_addr_bypass       :  Y_addr;
 
-//-------------------------------------------------------------//
+assign Write_Enable_mem  = bypass  ? 
+                           (~mode) ? Write_bypass_mem    : 1'b0   :
+                           (~mode) ? Write_Enable        : 1'b0;
+
+assign Write_Enable_fifo = bypass  ? FIFO_bypass         : Write_Enable; 
+
+assign Read_Enable_fifo  = (mode)  ? Read_Enable         : 1'b0;                
+
+assign I_interp          = bypass  ? data_from_fifo_I : data_I;
+assign Q_interp          = bypass  ? data_from_fifo_Q : data_Q;
+
+//---------------------Saturation threshold--------------------//
 
 assign min_Thold = {1'b1,{DATAPATH_WIDTH-1{1'b0}}};
 assign max_Thold = {1'b0,{DATAPATH_WIDTH-1{1'b1}}};
@@ -154,7 +172,7 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ), 
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ),
-    .data_to_process ( data_in_from_fifo_I ),
+    .data_to_process ( data_from_fifo_I    ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
     .data_out        ( data_I              )
@@ -180,7 +198,7 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ),
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ), 
-    .data_to_process ( data_in_from_fifo_Q ),
+    .data_to_process ( data_from_fifo_Q    ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
     .data_out        ( data_Q              )
@@ -188,34 +206,40 @@ intpol2_D4_Datapath#(
     
 
 intpol2_D4_Controlpath#(
-    .DATAPATH_WIDTH ( DATAPATH_WIDTH        ),
-    .CONFIG_WIDTH   ( CONFIG_WIDTH          )
+    .DATAPATH_WIDTH   ( DATAPATH_WIDTH    ),
+    .CONFIG_WIDTH     ( CONFIG_WIDTH      ),
+    .MEM_ADDR_WIDTH   ( MEM_ADDR_WIDTH    )
 )Controlpath(
-    .clk            ( clk                   ),
-    .rstn           ( rstn                  ),
-    .start          ( start                 ),
-    .Empty_i        ( Empty_i               ),
-    .Afull_i        ( Afull_i               ),
-    .ilen           ( ilen                  ),
-    .bypass         ( bypass                ),
-    .Ld_M0          ( Ld_M0                 ),
-    .Ld_M1          ( Ld_M1                 ),
-    .Ld_M2          ( Ld_M2                 ),
-    .sel_xi2        ( sel_xi2               ),
-    .FIFO_bypass    ( FIFO_bypass           ),
-    .busy           ( busy                  ),
-    .Write_Enable_w ( Write_Enable_w        ),
-    .Ld_data        ( Ld_data               ),
-    .Read_Enable_w  ( Read_Enable_w         ),
-    .Ld_p1_xi       ( Ld_p1_xi              ),
-    .en_sum         ( en_sum                ),
-    .en_stream      ( en_stream             ),
-    .op_1           ( op_1                  ),
-    .stop_empty     ( stop_empty            ),
-    .stop_Afull     ( stop_Afull            ),
-    .done           ( done                  ),
-    .sel_mult       ( sel_mult              ),
-    .clear          ( clear                 )
+    .clk              ( clk               ),
+    .rstn             ( rstn              ),
+    .start            ( start             ),
+    .mode             ( mode              ),
+    .Empty_i          ( Empty_i           ),
+    .Afull_i          ( Afull_i           ),
+    .ilen             ( ilen              ),
+    .bypass           ( bypass            ),
+    .Ld_M0            ( Ld_M0             ),
+    .Ld_M1            ( Ld_M1             ),
+    .Ld_M2            ( Ld_M2             ),
+    .sel_xi2          ( sel_xi2           ),
+    .FIFO_bypass      ( FIFO_bypass       ),
+    .busy             ( busy              ),
+    .Write_Enable     ( Write_Enable      ),
+    .Ld_data          ( Ld_data           ),
+    .Read_Enable      ( Read_Enable       ),
+    .Y_addr           ( Y_addr            ),
+    .Y_addr_bypass    ( Y_addr_bypass     ),
+    .Write_bypass_mem ( Write_bypass_mem  ),
+    .M_addr           ( M_addr            ),
+    .Ld_p1_xi         ( Ld_p1_xi          ),
+    .en_sum           ( en_sum            ),
+    .en_stream        ( en_stream         ),
+    .op_1             ( op_1              ),
+    .stop_empty       ( stop_empty        ),
+    .stop_Afull       ( stop_Afull        ),
+    .done             ( done              ),
+    .sel_mult         ( sel_mult          ),
+    .clear            ( clear             )
 );
 
 

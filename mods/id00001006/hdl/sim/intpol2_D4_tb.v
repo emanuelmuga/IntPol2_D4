@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-module intpol2_D4_IQ_tb();
+module intpol2_D4_tb();
 
 localparam   CONFIG_WIDTH    =  32;
 localparam   DATAPATH_WIDTH  =  12; 
@@ -86,7 +86,7 @@ assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 assign ilen = config_reg3[ADDR_WIDTH-1:0];
 assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
 
-intpol2_D4_IQ_CORE#(
+intpol2_D4_CORE#(
     .CONFIG_WIDTH        ( CONFIG_WIDTH        ),
     .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
     .N_bits              ( N_bits              ),
