@@ -68,13 +68,16 @@ wire comp_len;
 wire done_sink;
 wire [ADDR_WIDTH-1:0] total_len;
 
+
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
 reg [CONFIG_WIDTH-1:0] signal_len [0:1];
 reg [DELAY_WIDTH-1:0] delay_cc;
 reg nop;
 
+
 integer fd;
 integer i;
+integer j;
 
 assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
 assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
@@ -342,14 +345,16 @@ endtask
 
 initial
 begin 
-    $readmemh("OutputCos.txt", Signal_in_I.mem);
-    $readmemh("OutputSine.txt", Signal_in_Q.mem);
-    $readmemh("OutputCos.txt", IF_mem_in_I.mem);
-    $readmemh("OutputSine.txt", IF_mem_in_Q.mem);
-    $readmemh("config.txt", mem_config);
-    $readmemh("signal_len.txt", signal_len);  // tamano de senal 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
-
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/signal_len.txt", signal_len);  
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_I.mem);
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_Q.mem);
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/config.txt", mem_config);
+    // Filling Input IF Memory 
+    for(j=0; j<2**MEM_ADDR_WIDTH; j=j+1) begin
+        IF_mem_in_I.mem[j] = Signal_in_I.mem[j];
+        IF_mem_in_Q.mem[j] = Signal_in_I.mem[j];
+    end
     config_reg0 = mem_config[0];
     config_reg1 = mem_config[1];
     config_reg2 = mem_config[2];

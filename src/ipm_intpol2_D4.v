@@ -28,6 +28,8 @@ module ipm_intpol2_D4
   output wire done          
 );
 
+  localparam M_bits = DATAPATH_WIDTH-1;
+
   wire wireReset;
   wire [DATA_WIDTH-1:0] wireDataIPtoMCU;
   wire [DATA_WIDTH-1:0] wireDataMCUtoIP;
@@ -63,7 +65,10 @@ module ipm_intpol2_D4
 );
 
 
-ID00001006_intpol2_D4 IP_MODULE(
+ID00001006_intpol2_D4 #(
+  .DATAPATH_WIDTH(DATAPATH_WIDTH),
+  .M_bits        (M_bits)
+) IP_MODULE (
     .clk            ( clk              ),
     .rst_a          ( rst              ),
     .en_s           ( 1'b1             ),

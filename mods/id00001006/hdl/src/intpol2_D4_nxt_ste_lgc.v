@@ -17,13 +17,13 @@ module intpol2_D4_nxt_ste_lgc#(
     output reg   [MEM_ADDR_WIDTH-1:0] Y_addr,
     output reg   [MEM_ADDR_WIDTH-1:0] Y_addr_bypass,
     output wire  [MEM_ADDR_WIDTH-1:0] M_addr,
-	 output wire			              comp_cnt,
-	 output wire			              comp_addr,
+	output wire  			          comp_cnt,
+	output wire  			          comp_addr,
     output wire                       Ld_M0,
     output wire                       Ld_M1,
     output wire                       Ld_M2,
     output wire             [1:0]     sel_xi2,
-	 output reg                        Write_bypass_mem,
+	output reg                        Write_bypass_mem,
     output reg                        FIFO_bypass
 );
 
@@ -68,6 +68,9 @@ always @(posedge clk or negedge rstn or posedge clear) begin
             if(en_sum) 
                 cnt      = (cnt + 1'b1);
         end  
+
+        if(Write_Enable) 
+            Y_addr <= (Y_addr + 1'b1);
 
         FIFO_bypass      = fifo_bypass_ff;
         Write_bypass_mem = Read_Enable_ff;

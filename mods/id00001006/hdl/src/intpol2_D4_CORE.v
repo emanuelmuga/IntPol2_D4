@@ -38,9 +38,9 @@
                      status_reg[4] = Current_Mode; 
                      status_reg[5] = bypass;                      
 -------------------------------------------------------------------------------------------------
-    Version        : 2.0
+    Version        : 2.2
     Date           : 21 Sep 2022
-    Last update    : 25 Oct 2022
+    Last update    : 26 Oct 2022
 =================================================================================================            
 */
 
@@ -143,8 +143,12 @@ assign Write_Enable_mem  = bypass  ?
                            (~mode) ? Write_Enable        : 1'b0;
 assign Write_Enable_fifo = bypass  ? FIFO_bypass         : Write_Enable; 
 assign Read_Enable_fifo  = (mode)  ? Read_Enable         : 1'b0;                
-assign I_interp          = bypass  ? data_from_fifo_I    : data_I;
-assign Q_interp          = bypass  ? data_from_fifo_Q    : data_Q;
+assign I_interp          = bypass  ? 
+                           (mode)  ? data_from_fifo_I    : data_from_mem_I 
+                                                         : data_I;
+assign Q_interp          = bypass  ? 
+                           (mode)  ? data_from_fifo_Q    : data_from_mem_Q 
+                                                         : data_Q;
 
 //---------------------Saturation threshold--------------------//
 

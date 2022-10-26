@@ -1,4 +1,7 @@
-module ID00001006_intpol2_D4(
+module ID00001006_intpol2_D4 #(
+  parameter DATAPATH_WIDTH     = 32,
+  parameter M_bits             = 31     // Numero de bits parte fraccional
+)(
   clk,
   rst_a,
   en_s,
@@ -21,15 +24,13 @@ module ID00001006_intpol2_D4(
   Q_interp,
   done
 );
-
+  localparam N_bits             = 2;     // Numero de bits parte ++entera
 
   localparam DATA_WIDTH         = 32;
-  localparam DATAPATH_WIDTH     = 12;
-  localparam N_bits             = 2;     // Numero de bits parte ++entera
-  localparam M_bits             = 11;    // Numero de bits parte fraccional
   localparam CONFIG_WIDTH       = 5;
-  localparam FIFO_ADDR_WIDTH    = 3; 
+
   localparam MEM_ADDR_MAX_WIDTH = 16;     // Interface Memory lenght
+  localparam FIFO_ADDR_WIDTH    = 3;
 
   input  wire clk;
   input  wire rst_a;
