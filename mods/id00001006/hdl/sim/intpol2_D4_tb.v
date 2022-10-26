@@ -7,6 +7,7 @@ localparam   DATAPATH_WIDTH  =  12;
 localparam   N_bits          =  2;                    //N <= parte entera
 localparam   M_bits          =  11;                   //M = parte decimal
 localparam   FIFO_ADDR_WIDTH = 3;
+localparam   MEM_ADDR_WIDTH  = 4;
 localparam   ADDR_WIDTH      = $clog2(2**20);         // Tamaño de memoria de almacenamiento de la señal
 localparam   SF              = 2.0**-(M_bits);        //scaling factor (printing matters)
 

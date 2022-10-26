@@ -329,7 +329,6 @@ next_state    <= IDLE;
             end          
         S_BYPSS_ACCEL:  
             begin
-                en_cnt        <= 1'b0;
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
                 done          <= 1'b1; //<--

@@ -4,6 +4,7 @@
 /mods/id00001006/hdl/sim/modelsim
 /simulation
 /tcl
+*.rpt
 *.qpf
 *.qsf
 *.qws

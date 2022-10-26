@@ -93,7 +93,7 @@ wire                       Ld_M1;                            // carga muestra 1.
 wire                       Ld_M2;                            // carga muestra 2. 
 wire                       Ld_data;                          // carga resultado.
 wire                       Ld_p1_xi;                         // carga el valor p1*xi
-wire                       Write_bypass_mem                  // Write enable signal to Mem_out
+wire                       Write_bypass_mem;                 // Write enable signal to Mem_out
 wire                       Read_Enable;
 wire                       Write_Enable;
 

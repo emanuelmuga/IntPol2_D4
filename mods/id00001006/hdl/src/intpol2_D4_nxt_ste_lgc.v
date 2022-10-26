@@ -17,20 +17,21 @@ module intpol2_D4_nxt_ste_lgc#(
     output reg   [MEM_ADDR_WIDTH-1:0] Y_addr,
     output reg   [MEM_ADDR_WIDTH-1:0] Y_addr_bypass,
     output wire  [MEM_ADDR_WIDTH-1:0] M_addr,
-    output wire                       Write_bypass_mem,
-	output wire			              comp_cnt,
-	output wire			              comp_addr,
+	 output wire			              comp_cnt,
+	 output wire			              comp_addr,
     output wire                       Ld_M0,
     output wire                       Ld_M1,
     output wire                       Ld_M2,
     output wire             [1:0]     sel_xi2,
+	 output reg                        Write_bypass_mem,
     output reg                        FIFO_bypass
 );
 
 wire                         fifo_bypass_en;
 
 reg                          fifo_bypass_ff;
-reg                          Read_Enable_ff; 
+reg                          Read_Enable_ff;
+reg    [MEM_ADDR_WIDTH-1:0]  M_addr_ff; 
 reg    [CONFIG_WIDTH:0]      cnt;
 reg    [MEM_ADDR_WIDTH-1:0]  M_cnt;             //contador para lectura de memoria M
 
@@ -47,12 +48,12 @@ assign fifo_bypass_en  = (busy && (~Empty && ~Afull));
 
 always @(posedge clk or negedge rstn or posedge clear) begin
     if(~rstn || clear) begin
-        cnt             = {CONFIG_WIDTH{1'b0}};
-        M_cnt           = {MEM_ADDR_WIDTH{1'b0}};
-        Y_addr         <= {MEM_ADDR_MAX_WIDTH{1'b0}};
-        Y_addr_bypass  <= {MEM_ADDR_MAX_WIDTH{1'b0}};
-        FIFO_bypass    <= 1'b0;
-        Write_bypass_Y <= 1'b0;
+        cnt               = {CONFIG_WIDTH{1'b0}};
+        M_cnt             = {MEM_ADDR_WIDTH{1'b0}};
+        Y_addr           <= {MEM_ADDR_WIDTH{1'b0}};
+        Y_addr_bypass    <= {MEM_ADDR_WIDTH{1'b0}};
+        FIFO_bypass      <= 1'b0;
+        Write_bypass_mem <= 1'b0;
     end
     else begin       
 

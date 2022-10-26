@@ -29,6 +29,7 @@ module ID00001006_intpol2_D4(
   localparam M_bits          = 11;    // Numero de bits parte fraccional
   localparam CONFIG_WIDTH    = 5;
   localparam FIFO_ADDR_WIDTH = 3; 
+  localparam MEM_ADDR_WIDTH  = 4;
 
   input wire clk;
   input wire rst_a;
@@ -111,6 +112,7 @@ ID00001006_aip INTERFACE(
 
 intpol2_D4_CORE#(
     .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
+    .MEM_ADDR_WIDTH      ( MEM_ADDR_WIDTH      ),
     .N_bits              ( N_bits              ),
     .M_bits              ( M_bits              )
 )CORE(
