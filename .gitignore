@@ -12,4 +12,5 @@
 *.wlf
 *.mpf
 *.mti
-.*rpt
+*.rpt
+*.txt

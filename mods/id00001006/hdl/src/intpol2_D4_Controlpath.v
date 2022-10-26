@@ -79,6 +79,7 @@ intpol2_D4_fsm FSM(
     .clk          ( clk            ),
     .rstn         ( rstn           ),
     .start        ( start          ),
+    .mode         ( mode           ),
     .Afull        ( Afull_i        ),
     .Empty        ( Empty_i        ),
     .bypass       ( bypass         ),

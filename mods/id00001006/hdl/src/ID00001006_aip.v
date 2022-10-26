@@ -1,5 +1,7 @@
-// `define ID00001006_MEM_IN 0
-// `define ID00001006_MEM_OUT 0
+`define ID00001006_MEM_IN 2
+
+`define ID00001006_MEM_OUT 2
+
 `define ID00001006_CONF_REG 1
 
 
@@ -22,11 +24,21 @@ module ID00001006_aip
   intAIP,
 
   //--- IP-core ---//
-  
+  rdDataMemIn_0,
+rdDataMemIn_1,
+
+rdAddrMemIn_0,
+rdAddrMemIn_1,
 
 
-  
+  wrDataMemOut_0,
+wrDataMemOut_1,
 
+wrAddrMemOut_0,
+wrAddrMemOut_1,
+
+wrEnMemOut_0,
+wrEnMemOut_1,
 
 
   rdDataConfigReg,
@@ -35,9 +47,10 @@ module ID00001006_aip
   
 
   statusIPcore_Busy,
-statusIPcore_stop_empty,
-statusIPcore_stop_Afull,
-statusIPcore_bypass,
+statusIPcore_Empty,
+statusIPcore_Afull,
+statusIPcore_Current_Mode,
+statusIPcore_Bypass,
 
 intIPCore_Done,
 
@@ -69,15 +82,26 @@ intIPCore_Done,
   output intAIP;
 
   //--- IP-core ---//
-  
-  
+  output wire [DATA_WIDTH-1:0] rdDataMemIn_0;
+input wire [MEM_ADDR_MAX_WIDTH-1:0] rdAddrMemIn_0;
+output wire [DATA_WIDTH-1:0] rdDataMemIn_1;
+input wire [MEM_ADDR_MAX_WIDTH-1:0] rdAddrMemIn_1;
+
+  input [DATA_WIDTH-1:0] wrDataMemOut_0;
+input [MEM_ADDR_MAX_WIDTH-1:0] wrAddrMemOut_0;
+input wrEnMemOut_0;
+input [DATA_WIDTH-1:0] wrDataMemOut_1;
+input [MEM_ADDR_MAX_WIDTH-1:0] wrAddrMemOut_1;
+input wrEnMemOut_1;
+
   output [(CONF_REG_SIZE*DATA_WIDTH)-1:0] rdDataConfigReg;
   
   
   input statusIPcore_Busy;
-input statusIPcore_stop_empty;
-input statusIPcore_stop_Afull;
-input statusIPcore_bypass;
+input statusIPcore_Empty;
+input statusIPcore_Afull;
+input statusIPcore_Current_Mode;
+input statusIPcore_Bypass;
 input intIPCore_Done;
 
 
@@ -99,15 +123,20 @@ input intIPCore_Done;
     .intAIP (intAIP),
 
     //--- IP-core ---//
-    
-    
-    
-    
-    
+    .rdDataMemIn({rdDataMemIn_1, rdDataMemIn_0}),
+
+    .rdAddrMemIn({rdAddrMemIn_1, rdAddrMemIn_0}),
+
+    .wrDataMemOut({wrDataMemOut_1, wrDataMemOut_0}),
+
+    .wrAddrMemOut({wrAddrMemOut_1, wrAddrMemOut_0}),
+
+    .wrEnMemOut({wrEnMemOut_1, wrEnMemOut_0}),
+
     .rdDataConfigReg(rdDataConfigReg),
     
     
-    .statusIPcore({4'b0,statusIPcore_bypass, statusIPcore_stop_Afull, statusIPcore_stop_empty, statusIPcore_Busy}),
+    .statusIPcore({3'b0,statusIPcore_Bypass, statusIPcore_Current_Mode, statusIPcore_Afull, statusIPcore_Empty, statusIPcore_Busy}),
 
     .intIPCore({7'b0,intIPCore_Done}),
 
@@ -174,7 +203,7 @@ module aipModules
 
   localparam IP_ID = 32'h00001006;
 
-  localparam SEL_BITS = 'd1;
+  localparam SEL_BITS = 'd2;
 
   localparam DATA_WIDTH = 32;
 
@@ -187,21 +216,21 @@ module aipModules
   localparam STATUS_WIDTH = 8;
 
   `ifdef ID00001006_MEM_IN
-  localparam [(`ID00001006_MEM_IN*MEM_ADDR_MAX_WIDTH)-1:0] MEM_IN_ADDR_WIDTH = {  };
+  localparam [(`ID00001006_MEM_IN*MEM_ADDR_MAX_WIDTH)-1:0] MEM_IN_ADDR_WIDTH = { 16'd4, 16'd4 };
 
-  localparam [((`ID00001006_MEM_IN*2)*CONFIG_WIDTH)-1:0] CONFIG_MEM_IN = {  };
+  localparam [((`ID00001006_MEM_IN*2)*CONFIG_WIDTH)-1:0] CONFIG_MEM_IN = { 5'b00011, 5'b00010, 5'b00001, 5'b00000 };
   `endif
 
   `ifdef ID00001006_MEM_OUT
-  localparam [(`ID00001006_MEM_OUT*MEM_ADDR_MAX_WIDTH)-1:0] MEM_OUT_ADDR_WIDTH = {  };
+  localparam [(`ID00001006_MEM_OUT*MEM_ADDR_MAX_WIDTH)-1:0] MEM_OUT_ADDR_WIDTH = { 16'd4, 16'd4 };
 
-  localparam [((`ID00001006_MEM_OUT*2)*CONFIG_WIDTH)-1:0] CONFIG_MEM_OUT = {  };
+  localparam [((`ID00001006_MEM_OUT*2)*CONFIG_WIDTH)-1:0] CONFIG_MEM_OUT = { 5'b00111, 5'b00110, 5'b00101, 5'b00100 };
   `endif
 
   `ifdef ID00001006_CONF_REG
   localparam [(`ID00001006_CONF_REG*CONF_REG_ADDR_MAX_WIDTH)-1:0] CONF_REG_ADDR_WIDTH = { 3'd4 };
 
-  localparam [(2*CONFIG_WIDTH)-1:0] CONFIG_CONF_REG = { 5'b00001, 5'b00000 };
+  localparam [(2*CONFIG_WIDTH)-1:0] CONFIG_CONF_REG = { 5'b01001, 5'b01000 };
   `endif
 
   `ifdef ID00001006_STREAMING_IN

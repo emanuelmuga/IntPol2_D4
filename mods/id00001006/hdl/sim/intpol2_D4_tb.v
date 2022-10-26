@@ -2,14 +2,14 @@
 
 module intpol2_D4_tb();
 
-localparam   CONFIG_WIDTH    =  32;
-localparam   DATAPATH_WIDTH  =  12; 
-localparam   N_bits          =  2;                    //N <= parte entera
-localparam   M_bits          =  11;                   //M = parte decimal
+localparam   CONFIG_WIDTH    = 32;
+localparam   DATAPATH_WIDTH  = 12; 
+localparam   N_bits          = 2;                 //N <= parte entera
+localparam   M_bits          = 11;                //M = parte decimal
 localparam   FIFO_ADDR_WIDTH = 3;
-localparam   MEM_ADDR_WIDTH  = 4;
-localparam   ADDR_WIDTH      = $clog2(2**20);         // Tamaño de memoria de almacenamiento de la señal
-localparam   SF              = 2.0**-(M_bits);        //scaling factor (printing matters)
+localparam   MEM_ADDR_WIDTH  = 4;                //2**4
+localparam   ADDR_WIDTH      = $clog2(2**20);    // Tamaño de memoria de almacenamiento de la señal
+localparam   SF              = 2.0**-(M_bits);   //scaling factor (printing matters)
 
 localparam   DELAY_WIDTH     = 13;
 localparam   DEBUGMODE       = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
@@ -47,8 +47,11 @@ wire signed [DATAPATH_WIDTH-1:0] I_interp;
 wire signed [DATAPATH_WIDTH-1:0] Q_interp;
 wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_I;
 wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_Q;
-
-
+wire signed [DATAPATH_WIDTH-1:0] data_from_mem_I;
+wire signed [DATAPATH_WIDTH-1:0] data_from_mem_Q;
+wire signed [MEM_ADDR_WIDTH-1:0] Write_addr_mem;
+wire signed [MEM_ADDR_WIDTH-1:0] Read_addr_mem;
+wire Write_Enable_mem;
 wire Empty_Indica_I;
 wire Empty_Indica_Q;
 wire Almost_Full_I;
@@ -88,26 +91,51 @@ assign ilen = config_reg3[ADDR_WIDTH-1:0];
 assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
 
 intpol2_D4_CORE#(
-    .CONFIG_WIDTH        ( CONFIG_WIDTH        ),
-    .DATAPATH_WIDTH      ( DATAPATH_WIDTH      ),
-    .N_bits              ( N_bits              ),
-    .M_bits              ( M_bits              )
+    .CONFIG_WIDTH      ( CONFIG_WIDTH   ),
+    .DATAPATH_WIDTH    ( DATAPATH_WIDTH ),
+    .N_bits            ( N_bits         ),
+    .M_bits            ( M_bits         ),
+    .MEM_ADDR_WIDTH    ( MEM_ADDR_WIDTH )
 )DUT(
-    .clk                 ( clk                 ),
-    .rstn                ( rstn                ),
-    .start               ( start               ),
-    .Empty_i             ( Empty_intpol2       ),
-    .Afull_i             ( Afull_intpol2       ),
-    .config_reg          ( config_reg          ), // 4 Palabras
-    .data_in_from_fifo_I ( data_in_from_fifo_I ),
-    .data_in_from_fifo_Q ( data_in_from_fifo_Q ),
-    .Write_Enable_fifo   ( WE_fifo_out         ),
-    .Read_Enable_fifo    ( RE_fifo_in          ),
-    .status_reg          ( status_reg          ),
-    .I_interp            ( I_interp            ),
-    .Q_interp            ( Q_interp            )
+    .clk               ( clk               ),
+    .rstn              ( rstn              ),
+    .start             ( start             ),
+    .Empty_i           ( Empty_intpol2     ),
+    .Afull_i           ( Afull_intpol2     ),
+    .config_reg        ( config_reg        ),
+    .data_from_mem_I   ( data_from_mem_I   ),
+    .data_from_mem_Q   ( data_from_mem_Q   ),
+    .data_from_fifo_I  ( data_in_from_fifo_I  ),
+    .data_from_fifo_Q  ( data_in_from_fifo_Q  ),
+    .Read_addr_mem     ( Read_addr_mem     ),
+    .Write_addr_mem    ( Write_addr_mem    ),
+    .Write_Enable_mem  ( Write_Enable_mem  ),
+    .Write_Enable_fifo ( WE_fifo_out       ),
+    .Read_Enable_fifo  ( RE_fifo_in        ),
+    .status_reg        ( status_reg        ),
+    .I_interp          ( I_interp          ),
+    .Q_interp          ( Q_interp          )
 );
 
+
+// Memoria de interfaz de entrada
+M_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_M ( MEM_ADDR_WIDTH )
+)IF_mem_in_I(
+    .clk           ( clk             ),
+    .M_addr        ( Read_addr_mem   ),
+    .data_out      ( data_from_mem_I )
+);
+
+M_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_M ( MEM_ADDR_WIDTH )
+)IF_mem_in_Q(
+    .clk           ( clk             ),
+    .M_addr        ( Read_addr_mem   ),
+    .data_out      ( data_from_mem_Q )
+);
 
 Source_sim#(
     .ADDR_WIDTH ( ADDR_WIDTH )
@@ -123,7 +151,7 @@ Source_sim#(
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_M ( ADDR_WIDTH     )
-)M_MEM_I(
+)Signal_in_I(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
     .data_out   ( data_in_fifo_I )
@@ -132,7 +160,7 @@ M_mem#(
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_M ( ADDR_WIDTH     )
-)M_MEM_Q(
+)Signal_in_Q(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
     .data_out   ( data_in_fifo_Q )
@@ -158,23 +186,44 @@ Sink_sim#(
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH       ),
     .MEM_SIZE_Y ( ADDR_WIDTH            )
-)Y_mem_I(
-    .clk        ( clk                   ),
-    .Y_addr     ( Y_addr                ),
-    .WE         ( WE_Y                  ),
-    .data_in    ( data_out_from_fifo_I  )
+)Signal_out_I(
+    .clk            ( clk                   ),
+    .Y_addr         ( Y_addr                ),
+    .Write_Enable_Y ( WE_Y                  ),
+    .data_in        ( data_out_from_fifo_I  )
 );
 
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH       ),
     .MEM_SIZE_Y ( ADDR_WIDTH            )
-)Y_mem_Q(
-    .clk        ( clk                   ),
-    .Y_addr     ( Y_addr                ),
-    .WE         ( WE_Y                  ),
-    .data_in    ( data_out_from_fifo_Q  )
+)Signal_out_Q(
+    .clk            ( clk                   ),
+    .Y_addr         ( Y_addr                ),
+    .Write_Enable_Y ( WE_Y                  ),
+    .data_in        ( data_out_from_fifo_Q  )
 );
 
+// Memoria de Interfaz de salida
+
+Y_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_Y ( MEM_ADDR_WIDTH )
+)IF_mem_out_I(
+    .clk            ( clk              ),
+    .Y_addr         ( Write_addr_mem   ),
+    .Write_Enable_Y ( Write_Enable_mem ),
+    .data_in        ( I_interp         )
+);
+
+Y_mem#(
+    .DATA_WIDTH ( DATAPATH_WIDTH ),
+    .MEM_SIZE_Y ( MEM_ADDR_WIDTH )
+)IF_mem_out_Q(
+    .clk            ( clk              ),
+    .Y_addr         ( Write_addr_mem   ),
+    .Write_Enable_Y ( Write_Enable_mem ),
+    .data_in        ( Q_interp         )
+);
 
 //-----------FIFOs de entrada-------------------------//
 
@@ -293,8 +342,10 @@ endtask
 
 initial
 begin 
-    $readmemh("OutputCos.txt", M_MEM_I.mem);
-    $readmemh("OutputSine.txt", M_MEM_Q.mem);
+    $readmemh("OutputCos.txt", Signal_in_I.mem);
+    $readmemh("OutputSine.txt", Signal_in_Q.mem);
+    $readmemh("OutputCos.txt", IF_mem_in_I.mem);
+    $readmemh("OutputSine.txt", IF_mem_in_Q.mem);
     $readmemh("config.txt", mem_config);
     $readmemh("signal_len.txt", signal_len);  // tamano de senal 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
@@ -335,21 +386,21 @@ begin
     join
 end
 
-always @(done_sink) begin
-    if(done_sink) begin
-        fd = $fopen("../interp_cos.txt","w");
-        for(i=0; i<= total_len; i = i+1) begin
-            $fdisplay(fd, "%h", Y_mem_I.mem[i]);
-        end
-        $fclose(fd);
-        fd = $fopen("../interp_sine.txt","w");
-        for(i=0; i<= total_len; i = i+1) begin
-            $fdisplay(fd, "%h", Y_mem_Q.mem[i]);
-        end
-        $fclose(fd);
-        $stop;
-    end
-end
+// always @(done_sink) begin
+//     if(done_sink) begin
+//         fd = $fopen("../interp_cos.txt","w");
+//         for(i=0; i<= total_len; i = i+1) begin
+//             $fdisplay(fd, "%h", Signal_out_I.mem[i]);
+//         end
+//         $fclose(fd);
+//         fd = $fopen("../interp_sine.txt","w");
+//         for(i=0; i<= total_len; i = i+1) begin
+//             $fdisplay(fd, "%h", Signal_out_Q.mem[i]);
+//         end
+//         $fclose(fd);
+//         $stop;
+//     end
+// end
 
 always @(DUT.Controlpath.FSM.state) begin
     if(DEBUGMODE == 1) begin
@@ -388,49 +439,5 @@ always @(posedge clk) begin
     if(DUT.done == 1)
             $display("Done");  
 end
-
-//-------------------Memoria de entrada M------------------//
-
-module M_mem #(
-    parameter   DATA_WIDTH = 16,
-    parameter   MEM_SIZE_M  = $clog2(3)
-)(
-    input      clk,
-    input      [MEM_SIZE_M-1:0] M_addr,
-    output reg [DATA_WIDTH-1:0] data_out
-);
-
-    reg [DATA_WIDTH-1:0] mem [0:(2**MEM_SIZE_M)-1];
-
-    always @(posedge clk) begin
-            data_out <= mem[M_addr];
-    end
-
-endmodule
-
-//-------------------Memoria de Salida Y------------------//
-
-module Y_mem #(
-    parameter   DATA_WIDTH = 16,
-    parameter   MEM_SIZE_Y  = $clog2(16)
-)(
-    input      clk,
-    input      [MEM_SIZE_Y-1:0] Y_addr,
-    input      WE,
-    input signed  [DATA_WIDTH-1:0] data_in
-);
-
-    reg signed [DATA_WIDTH-1:0] mem [0:(2**MEM_SIZE_Y)-1];
-
-    always @(posedge clk) begin
-        if(WE)
-            mem[Y_addr] <= data_in;
-    end
-    
-
-endmodule
-
-
-
 
 endmodule

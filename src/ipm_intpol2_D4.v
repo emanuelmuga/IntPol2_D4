@@ -1,4 +1,4 @@
-module ipm_intpol2_D4_IQ
+module ipm_intpol2_D4
 #(
   parameter DATA_WIDTH = 32,
   parameter DATAPATH_WIDTH = 32,
@@ -63,7 +63,7 @@ module ipm_intpol2_D4_IQ
 );
 
 
-ID00001006_intpol2_V4_IQ IP_MODULE(
+ID00001006_intpol2_D4 IP_MODULE(
     .clk            ( clk              ),
     .rst_a          ( rst              ),
     .en_s           ( 1'b1             ),
