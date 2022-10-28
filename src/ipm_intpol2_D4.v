@@ -1,4 +1,4 @@
-module ipm_intpol2_D4_IQ
+module ipm_intpol2_D4
 #(
   parameter DATA_WIDTH = 32,
   parameter DATAPATH_WIDTH = 32,
@@ -27,6 +27,8 @@ module ipm_intpol2_D4_IQ
   output wire [DATAPATH_WIDTH-1:0] Q_interp,
   output wire done          
 );
+
+  localparam M_bits = DATAPATH_WIDTH-1;
 
   wire wireReset;
   wire [DATA_WIDTH-1:0] wireDataIPtoMCU;
@@ -63,7 +65,10 @@ module ipm_intpol2_D4_IQ
 );
 
 
-ID00001006_intpol2_V4_IQ IP_MODULE(
+ID00001006_intpol2_D4 #(
+  .DATAPATH_WIDTH(DATAPATH_WIDTH),
+  .M_bits        (M_bits)
+) IP_MODULE (
     .clk            ( clk              ),
     .rst_a          ( rst              ),
     .en_s           ( 1'b1             ),

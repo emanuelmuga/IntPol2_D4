@@ -35,11 +35,12 @@
                      status_reg[1] = busy;
                      status_reg[2] = stop_empty;
                      status_reg[3] = stop_Afull;
+                     status_reg[4] = Current_Mode; 
                      status_reg[5] = bypass;                      
 -------------------------------------------------------------------------------------------------
-    Version        : 2.0
+    Version        : 2.2
     Date           : 21 Sep 2022
-    Last update    : 25 Oct 2022
+    Last update    : 26 Oct 2022
 =================================================================================================            
 */
 
@@ -57,6 +58,8 @@ module intpol2_D4_CORE #(
     input                                   Empty_i,            // Fifo_in empty
     input                                   Afull_i,            // Fifo_out Almost full  
     input              [128-1:0]            config_reg,         // Configuracion
+    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_I,    // Data from Mem_I
+    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_Q,    // Data from Mem_I
     input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_I,   // entrada desde FIFO_I   
     input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_Q,   // entrada desde FIFO_Q
     output wire        [MEM_ADDR_WIDTH-1:0] Read_addr_mem,      // Addr Mem_in
@@ -76,11 +79,12 @@ wire  [DATAPATH_WIDTH-1:0] iX;
 wire  [DATAPATH_WIDTH-1:0] iX2;  
 wire  [DATAPATH_WIDTH-1:0] data_I;
 wire  [DATAPATH_WIDTH-1:0] data_Q;
-
 wire  [CONFIG_WIDTH-1:0]   config_reg0;
 wire  [CONFIG_WIDTH-1:0]   config_reg1;
 wire  [CONFIG_WIDTH-1:0]   config_reg2;
 wire  [CONFIG_WIDTH-1:0]   config_reg3;
+wire  [DATAPATH_WIDTH-1:0] data_to_process_I;                // Select data to process MEM/FIFO
+wire  [DATAPATH_WIDTH-1:0] data_to_process_Q;                // Select data to process MEM/FIFO
 wire                       en_sum;                           // enable del cnt y de la multi por sumatoria.
 wire  [MEM_ADDR_WIDTH-1:0] M_addr;                           // Addr for Mem_in.
 wire  [MEM_ADDR_WIDTH-1:0] Y_addr;                           // Addr for Mem_out.
@@ -93,7 +97,7 @@ wire                       Ld_M1;                            // carga muestra 1.
 wire                       Ld_M2;                            // carga muestra 2. 
 wire                       Ld_data;                          // carga resultado.
 wire                       Ld_p1_xi;                         // carga el valor p1*xi
-wire                       Write_bypass_mem                  // Write enable signal to Mem_out
+wire                       Write_bypass_mem;                 // Write enable signal to Mem_out
 wire                       Read_Enable;
 wire                       Write_Enable;
 
@@ -107,10 +111,8 @@ wire                       stop_Afull;
 wire          [1:0]        sel_xi2;
 wire                       FIFO_bypass;
 
-//---------------------Saturation threshold--------------------//
 wire  signed [DATAPATH_WIDTH-1:0] max_Thold;
 wire  signed [DATAPATH_WIDTH-1:0] min_Thold;
-
 
 assign config_reg0   = config_reg[CONFIG_WIDTH-1:0]; 
 assign config_reg1   = config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH];
@@ -130,21 +132,23 @@ assign status_reg[3] = stop_Afull;
 assign status_reg[4] = mode;
 assign status_reg[5] = bypass;  
 
+//--------------------------Input Muxes-----------------------//
+assign data_to_process_I = (mode)  ? data_from_fifo_I    : data_from_mem_I;
+assign data_to_process_Q = (mode)  ? data_from_fifo_Q    : data_from_mem_Q;
 //--------------------------Output Muxes-----------------------//
 assign Read_addr_mem     = M_addr;
-
 assign Write_addr_mem    = bypass  ? Y_addr_bypass       :  Y_addr;
-
 assign Write_Enable_mem  = bypass  ? 
                            (~mode) ? Write_bypass_mem    : 1'b0   :
                            (~mode) ? Write_Enable        : 1'b0;
-
 assign Write_Enable_fifo = bypass  ? FIFO_bypass         : Write_Enable; 
-
 assign Read_Enable_fifo  = (mode)  ? Read_Enable         : 1'b0;                
-
-assign I_interp          = bypass  ? data_from_fifo_I : data_I;
-assign Q_interp          = bypass  ? data_from_fifo_Q : data_Q;
+assign I_interp          = bypass  ? 
+                           (mode)  ? data_from_fifo_I    : data_from_mem_I 
+                                                         : data_I;
+assign Q_interp          = bypass  ? 
+                           (mode)  ? data_from_fifo_Q    : data_from_mem_Q 
+                                                         : data_Q;
 
 //---------------------Saturation threshold--------------------//
 
@@ -172,7 +176,7 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ), 
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ),
-    .data_to_process ( data_from_fifo_I    ),
+    .data_to_process ( data_to_process_I   ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
     .data_out        ( data_I              )
@@ -198,7 +202,7 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ),
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ), 
-    .data_to_process ( data_from_fifo_Q    ),
+    .data_to_process ( data_to_process_Q   ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
     .data_out        ( data_Q              )

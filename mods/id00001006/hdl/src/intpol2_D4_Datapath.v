@@ -133,17 +133,27 @@ intpol2_D4_shift#(
 
 
 //---------------- p2 = (M2 + M0)/2 - m1 -----------------------//
-intpol2_D4_sub_sync#(
+// intpol2_D4_sub_sync#(
+//     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
+//     .N_bits(N_bits)
+// )SUB_1(
+//     .clk        ( clk         ),
+//     .rstn       ( rstn        ),
+//     .en         ( op_1        ),
+//     .A          ( m2_m0_div2  ),
+//     .B          ( m1          ),
+//     .C          ( p2          )
+// );
+
+intpol2_D4_sub#(
     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SUB_1(
-    .clk        ( clk         ),
-    .rstn       ( rstn        ),
-    .en         ( op_1        ),
-    .A          ( m2_m0_div2  ),
-    .B          ( m1          ),
-    .C          ( p2          )
+    .A  ( m2_m0_div2  ),
+    .B  ( m1  ),
+    .C  ( p2  )
 );
+
 
 //--------------------------- 2*m1 -----------------------------//
 intpol2_D4_shift#(
@@ -168,17 +178,38 @@ intpol2_D4_sub#(
 
 //--------------- p1 = (t2_m1 - m0) - m2_m0_div2) ------------------//
 
-intpol2_D4_sub_sync#(
+// intpol2_D4_sub_sync#(
+//     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
+//     .N_bits(N_bits)
+// )SUB_3(
+//     .clk        ( clk        ),
+//     .rstn       ( rstn       ),
+//     .en         ( op_1       ),
+//     .A          ( t2_m1_m0   ),
+//     .B          ( m2_m0_div2 ),
+//     .C          ( p1         )
+// );
+
+intpol2_D4_sub#(
     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
     .N_bits(N_bits)
 )SUB_3(
-    .clk        ( clk        ),
-    .rstn       ( rstn       ),
-    .en         ( op_1       ),
-    .A          ( t2_m1_m0   ),
-    .B          ( m2_m0_div2 ),
-    .C          ( p1         )
+    .A  ( t2_m1_m0  ),
+    .B  ( m2_m0_div2  ),
+    .C  ( p1  )
 );
+
+// intpol2_D4_sub_sync#(
+//     .DATAPATH_WIDTH ( DATAPATH_WIDTH ),
+//     .N_bits(N_bits)
+// )SUB_3(
+//     .clk        ( clk        ),
+//     .rstn       ( rstn       ),
+//     .en         ( op_1       ),
+//     .A          ( t2_m1_m0   ),
+//     .B          ( m2_m0_div2 ),
+//     .C          ( p1         )
+// );
 
 //--------------------------- x*i -----------------------//
 

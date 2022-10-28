@@ -9,22 +9,46 @@
             "comment": "CONFIGREG",
             "enom": "CCONFIGREG",
             "size": "4",
-            "val": "5'b00000"
+            "val": "5'b01000"
         },
         "memIn": [
+            {
+                "comment": "MEMIN_Q",
+                "enom": "MMEMINQ",
+                "size": "16",
+                "val": "5'b00000"
+            },
+            {
+                "comment": "MEMIN_I",
+                "enom": "MMEMINI",
+                "size": "16",
+                "val": "5'b00010"
+            }
         ],
         "memInStream": {
         },
         "memOut": [
+            {
+                "comment": "MEMOUT_Q",
+                "enom": "MMEMOUTQ",
+                "size": "16",
+                "val": "5'b00100"
+            },
+            {
+                "comment": "MEMOUT_I",
+                "enom": "MMEMOUTI",
+                "size": "16",
+                "val": "5'b00110"
+            }
         ],
         "memOutStream": {
         }
     },
     "regs": {
         "reg1": "",
-        "reg10": "stop_Afull",
-        "reg11": "bypass",
-        "reg12": "",
+        "reg10": "Afull",
+        "reg11": "Current_Mode",
+        "reg12": "Bypass",
         "reg13": "",
         "reg14": "",
         "reg15": "",
@@ -34,6 +58,6 @@
         "reg5": "",
         "reg6": "",
         "reg7": "",
-        "reg9": "stop_empty"
+        "reg9": "Empty"
     }
 }

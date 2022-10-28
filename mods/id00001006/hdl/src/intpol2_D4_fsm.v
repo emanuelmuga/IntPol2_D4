@@ -162,7 +162,7 @@ next_state    <= IDLE;
                                     next_state <= S_BYPSS_STRM;
                                 end
                                 else begin
-                                    next_state <= S2;   
+                                    next_state <= S3;   
                                 end
                             end
                             else begin
@@ -178,7 +178,7 @@ next_state    <= IDLE;
                                 next_state <= S_BYPSS_ACCEL;
                             end
                             else begin
-                                next_state <= S2;   
+                                next_state <= S3;   
                             end
                         end
                         else begin
@@ -187,27 +187,27 @@ next_state    <= IDLE;
                     end
                 end                 
             end     
-        S2:
-            begin
-                en_sum        <= 1'b0;
-                en_M_addr     <= 1'b0;
-                Ld_p1_xi      <= 1'b0;
-                Read_Enable   <= 1'b0;
-                Ld_data       <= 1'b0; 
-                op_1          <= 1'b1; //<--
-                done          <= 1'b0;
-                busy          <= 1'b1; //<--
-                en_stream     <= 1'b0; 
-                stop_empty    <= 1'b0;
-                stop_Afull    <= 1'b0;                 
-                sel_mult      <= 1'b0;  
-                if(start) begin
-                    next_state <= S_CLEAR;
-                end    
-                else begin
-                    next_state <= S3;
-                end  
-            end  
+        // S2:
+        //     begin
+        //         en_sum        <= 1'b0;
+        //         en_M_addr     <= 1'b0;
+        //         Ld_p1_xi      <= 1'b0;
+        //         Read_Enable   <= 1'b0;
+        //         Ld_data       <= 1'b0; 
+        //         op_1          <= 1'b1; //<--
+        //         done          <= 1'b0;
+        //         busy          <= 1'b1; //<--
+        //         en_stream     <= 1'b0; 
+        //         stop_empty    <= 1'b0;
+        //         stop_Afull    <= 1'b0;                 
+        //         sel_mult      <= 1'b0;  
+        //         if(start) begin
+        //             next_state <= S_CLEAR;
+        //         end    
+        //         else begin
+        //             next_state <= S3;
+        //         end  
+        //     end  
         S3:
             begin 
                 en_sum        <= 1'b0;
@@ -323,13 +323,12 @@ next_state    <= IDLE;
                         next_state <= S_STREAM;
                     end    
                     else begin
-                        next_state <= S2;
+                        next_state <= S3;
                     end 
                 end    
             end          
         S_BYPSS_ACCEL:  
             begin
-                en_cnt        <= 1'b0;
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
                 done          <= 1'b1; //<--
@@ -346,8 +345,7 @@ next_state    <= IDLE;
                 en_sum        <= 1'b0;
                 en_M_addr     <= 1'b0;
                 done          <= 1'b0; 
-                busy          <= 1'b1; //<--
-                Read_Enable   <= 1'b1; //<--  
+                busy          <= 1'b1; //<-- 
                 Ld_data       <= 1'b0;               
                 op_1          <= 1'b0;
                 en_stream     <= 1'b0;
@@ -359,9 +357,11 @@ next_state    <= IDLE;
                 end
                 if(Afull) begin
                     stop_Afull    <= 1'b1;
+                    Read_Enable   <= 1'b0; 
                 end    
                 else begin
                      stop_Afull    <= 1'b0;
+                     Read_Enable   <= 1'b1; //<-- 
                 end  
                 if(start) begin
                     next_state <= S_CLEAR;
