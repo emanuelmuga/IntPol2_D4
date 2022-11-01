@@ -91,7 +91,9 @@ assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
 assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
 assign ilen = config_reg3[ADDR_WIDTH-1:0];
-assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
+// assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
+// assign total_len = 'h80; 
+assign total_len = 'h9; 
 
 intpol2_D4_CORE#(
     .CONFIG_WIDTH      ( CONFIG_WIDTH   ),
@@ -346,15 +348,22 @@ endtask
 initial
 begin 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
-    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/signal_len.txt", signal_len);  
-    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_I.mem);
-    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_Q.mem);
+    // $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/signal_len.txt", signal_len);  
+    // $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_I.mem);
+    // $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_Q.mem);
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/config.txt", mem_config);
     // Filling Input IF Memory 
     for(j=0; j<2**MEM_ADDR_WIDTH; j=j+1) begin
         IF_mem_in_I.mem[j] = Signal_in_I.mem[j];
         IF_mem_in_Q.mem[j] = Signal_in_I.mem[j];
     end
+    Signal_in_I.mem[0] = 12'h05b;
+    Signal_in_I.mem[1] = 12'h0b8;
+    Signal_in_I.mem[2] = 12'h114;
+    Signal_in_Q.mem[0] = 12'h05b;
+    Signal_in_Q.mem[1] = 12'h0b8;
+    Signal_in_Q.mem[2] = 12'h114;
+
     config_reg0 = mem_config[0];
     config_reg1 = mem_config[1];
     config_reg2 = mem_config[2];
@@ -391,21 +400,21 @@ begin
     join
 end
 
-// always @(done_sink) begin
-//     if(done_sink) begin
-//         fd = $fopen("../interp_cos.txt","w");
-//         for(i=0; i<= total_len; i = i+1) begin
-//             $fdisplay(fd, "%h", Signal_out_I.mem[i]);
-//         end
-//         $fclose(fd);
-//         fd = $fopen("../interp_sine.txt","w");
-//         for(i=0; i<= total_len; i = i+1) begin
-//             $fdisplay(fd, "%h", Signal_out_Q.mem[i]);
-//         end
-//         $fclose(fd);
-//         $stop;
-//     end
-// end
+always @(done_sink) begin
+    if(done_sink) begin
+        fd = $fopen("../interp_cos.txt","w");
+        for(i=0; i<= total_len; i = i+1) begin
+            $fdisplay(fd, "%h", Signal_out_I.mem[i]);
+        end
+        $fclose(fd);
+        fd = $fopen("../interp_sine.txt","w");
+        for(i=0; i<= total_len; i = i+1) begin
+            $fdisplay(fd, "%h", Signal_out_Q.mem[i]);
+        end
+        $fclose(fd);
+        $stop;
+    end
+end
 
 always @(DUT.Controlpath.FSM.state) begin
     if(DEBUGMODE == 1) begin
