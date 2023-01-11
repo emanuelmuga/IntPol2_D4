@@ -4,7 +4,7 @@
     Contact       : emanuel.murillo@cinvestav.mx
                     emanuel.muga13@gmail.com
 
-    Module Name   : intpol2_D4_CORE (TOP), Interpolador Cuadratico Diseño IV IQ
+    Module Name   : intpol2_D4_CORE (TOP), Interpolador Cuadratico Diseño IV Dual datapath (IQ) Macro. 
     Type          : Verilog module
     
     Description   : Obtine los valores interpolados entre tres datos de entrada, M0, M1, M2.
@@ -38,11 +38,13 @@
                      status_reg[4] = Current_Mode; 
                      status_reg[5] = bypass;                      
 -------------------------------------------------------------------------------------------------
-    Version        : 2.2
+    Version        : 2.3
     Date           : 21 Sep 2022
-    Last update    : 26 Oct 2022
+    Last update    : 10 Jan 2023
 =================================================================================================            
 */
+
+`define DUAL_DATAPATH 1			// <--- Descomentar para activar el doble datapath
 
 module intpol2_D4_CORE #(
     parameter   CONFIG_WIDTH       =  32,                          // tamaño de palabra de config reg
@@ -58,33 +60,41 @@ module intpol2_D4_CORE #(
     input                                   Empty_i,            // Fifo_in empty
     input                                   Afull_i,            // Fifo_out Almost full  
     input              [128-1:0]            config_reg,         // Configuracion
-    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_I,    // Data from Mem_I
-    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_Q,    // Data from Mem_I
-    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_I,   // entrada desde FIFO_I   
-    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_Q,   // entrada desde FIFO_Q
+    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_1,    // Data from Mem_I
+    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_1,   // entrada desde FIFO_I   
+`ifdef DUAL_DATAPATH
+    input       signed [DATAPATH_WIDTH-1:0] data_from_mem_2,    // Data from Mem_I
+    input       signed [DATAPATH_WIDTH-1:0] data_from_fifo_2,   // entrada desde FIFO_Q
+`endif
     output wire        [MEM_ADDR_WIDTH-1:0] Read_addr_mem,      // Addr Mem_in
     output wire        [MEM_ADDR_WIDTH-1:0] Write_addr_mem,     // Addr Mem_out
     output wire                             Write_Enable_mem,   // Write Enable Mem_out   
     output wire                             Write_Enable_fifo,  
     output wire                             Read_Enable_fifo,   
     output wire        [8-1:0]              status_reg,         
-    output wire signed [DATAPATH_WIDTH-1:0] I_interp,           // Result I   
-    output wire signed [DATAPATH_WIDTH-1:0] Q_interp            // Result Q                                            
+    output wire signed [DATAPATH_WIDTH-1:0] data_out_1,           // Result I  
+`ifdef DUAL_DATAPATH 
+    output wire signed [DATAPATH_WIDTH-1:0] data_out_2            // Result Q   
+`endif                                         
 );
 
 //-----------------------Connection signals--------------------//
-wire                       mode;                             // Selección de modo Accel./Stream  
+wire                       mode;                               // Selección de modo Accel./Stream  
 wire  [CONFIG_WIDTH-1:0]   ilen;
 wire  [DATAPATH_WIDTH-1:0] iX;  
-wire  [DATAPATH_WIDTH-1:0] iX2;  
-wire  [DATAPATH_WIDTH-1:0] data_I;
-wire  [DATAPATH_WIDTH-1:0] data_Q;
+wire  [DATAPATH_WIDTH-1:0] iX2;  ;
 wire  [CONFIG_WIDTH-1:0]   config_reg0;
 wire  [CONFIG_WIDTH-1:0]   config_reg1;
 wire  [CONFIG_WIDTH-1:0]   config_reg2;
 wire  [CONFIG_WIDTH-1:0]   config_reg3;
-wire  [DATAPATH_WIDTH-1:0] data_to_process_I;                // Select data to process MEM/FIFO
-wire  [DATAPATH_WIDTH-1:0] data_to_process_Q;                // Select data to process MEM/FIFO
+wire  [DATAPATH_WIDTH-1:0] data_to_process_1;                // Select data to process MEM/FIFO 
+wire  [DATAPATH_WIDTH-1:0] data_1;
+
+`ifdef DUAL_DATAPATH
+    wire  [DATAPATH_WIDTH-1:0] data_to_process_2;                // Select data to process MEM/FIFO
+    wire  [DATAPATH_WIDTH-1:0] data_2     
+`endif
+
 wire                       en_sum;                           // enable del cnt y de la multi por sumatoria.
 wire  [MEM_ADDR_WIDTH-1:0] M_addr;                           // Addr for Mem_in.
 wire  [MEM_ADDR_WIDTH-1:0] Y_addr;                           // Addr for Mem_out.
@@ -133,8 +143,10 @@ assign status_reg[4] = mode;
 assign status_reg[5] = bypass;  
 
 //--------------------------Input Muxes-----------------------//
-assign data_to_process_I = (mode)  ? data_from_fifo_I    : data_from_mem_I;
-assign data_to_process_Q = (mode)  ? data_from_fifo_Q    : data_from_mem_Q;
+assign data_to_process_1 = (mode)  ? data_from_fifo_1    : data_from_mem_1;
+`ifdef DUAL_DATAPATH
+    assign data_to_process_2 = (mode)  ? data_from_fifo_2    : data_from_mem_2;
+`endif
 //--------------------------Output Muxes-----------------------//
 assign Read_addr_mem     = M_addr;
 assign Write_addr_mem    = bypass  ? Y_addr_bypass       :  Y_addr;
@@ -143,12 +155,14 @@ assign Write_Enable_mem  = bypass  ?
                            (~mode) ? Write_Enable        : 1'b0;
 assign Write_Enable_fifo = bypass  ? FIFO_bypass         : Write_Enable; 
 assign Read_Enable_fifo  = (mode)  ? Read_Enable         : 1'b0;                
-assign I_interp          = bypass  ? 
-                           (mode)  ? data_from_fifo_I    : data_from_mem_I 
-                                                         : data_I;
-assign Q_interp          = bypass  ? 
-                           (mode)  ? data_from_fifo_Q    : data_from_mem_Q 
-                                                         : data_Q;
+assign data_out_1        = bypass  ? 
+                           (mode)  ? data_from_fifo_1    : data_from_mem_1 
+                                                         : data_1;
+`ifdef 
+    assign data_out_2    = bypass  ? 
+                           (mode)  ? data_from_fifo_2    : data_from_mem_2 
+                                                         : data_2;   
+`endif                                                         
 
 //---------------------Saturation threshold--------------------//
 
@@ -160,7 +174,7 @@ intpol2_D4_Datapath#(
     .DATAPATH_WIDTH  ( DATAPATH_WIDTH      ),
     .N_bits          ( N_bits              ),
     .M_bits          ( M_bits              )
-)Datapath_I(
+)Datapath_1(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
     .clear           ( clear               ),
@@ -176,17 +190,18 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ), 
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ),
-    .data_to_process ( data_to_process_I   ),
+    .data_to_process ( data_to_process_1   ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
-    .data_out        ( data_I              )
+    .data_out        ( data_1              )
 );
 
+`ifdef DUAL_DATAPATH
 intpol2_D4_Datapath#(
     .DATAPATH_WIDTH  ( DATAPATH_WIDTH      ),
     .N_bits          ( N_bits              ),
     .M_bits          ( M_bits              )
-)Datapath_Q(
+)Datapath_2(
     .clk             ( clk                 ),
     .rstn            ( rstn                ),
     .clear           ( clear               ),
@@ -202,11 +217,12 @@ intpol2_D4_Datapath#(
     .sel_xi2         ( sel_xi2             ),
     .min_Thold       ( min_Thold           ),
     .max_Thold       ( max_Thold           ), 
-    .data_to_process ( data_to_process_Q   ),
+    .data_to_process ( data_to_process_2   ),
     .x               ( iX                  ),
     .x2              ( iX2                 ),
-    .data_out        ( data_Q              )
+    .data_out        ( data_2              )
 );
+`endif
     
 
 intpol2_D4_Controlpath#(

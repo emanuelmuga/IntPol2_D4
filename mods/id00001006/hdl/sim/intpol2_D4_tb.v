@@ -1,19 +1,21 @@
 `timescale 1ns/100ps
 
+`define DUAL_DATAPATH 1				// <--- Descomentar para activar el doble datapath
+
 module intpol2_D4_tb();
 
-localparam   CONFIG_WIDTH    = 32;
-localparam   DATAPATH_WIDTH  = 12; 
-localparam   N_bits          = 2;                 //N <= parte entera
-localparam   M_bits          = 11;                //M = parte decimal
-localparam   FIFO_ADDR_WIDTH = 3;
-localparam   MEM_ADDR_WIDTH  = 4;                //2**4
-localparam   ADDR_WIDTH      = $clog2(2**20);    // Tamaño de memoria de almacenamiento de la señal
-localparam   SF              = 2.0**-(M_bits);   //scaling factor (printing matters)
+localparam   DATAPATH_WIDTH    = 16; 
+localparam   M_bits            = DATAPATH_WIDTH-1; //M = parte decimal
+localparam   N_bits            = 2;                //N <= parte entera
+localparam   CONFIG_WIDTH      = 32;
+localparam   FIFO_ADDR_WIDTH   = 3;
+localparam   MEM_ADDR_WIDTH    = 4;                //2**4
+localparam   SIGNAL_ADDR_WIDTH = $clog2(2**20);    // Tamaño de memoria de almacenamiento de la señal
+localparam   SF                = 2.0**-(M_bits);   //scaling factor (printing matters)
 
-localparam   DELAY_WIDTH     = 13;
-localparam   DEBUGMODE       = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
-localparam   BYPASS          = 0;   //bypass   ~OFF/ON           
+localparam   DELAY_WIDTH       = 13;
+localparam   DEBUGMODE         = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
+localparam   BYPASS            = 0;   //bypass   ~OFF/ON           
 
 
 reg                              clk;
@@ -28,8 +30,8 @@ reg         [CONFIG_WIDTH-1:0]   config_reg3;
 wire       [CONFIG_WIDTH*4-1:0] config_reg; // 4 Palabras
 wire                             WE_fifo_in;
 wire                             RE_fifo_out;
-wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_I;
-wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_Q;
+wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_1;
+wire signed [DATAPATH_WIDTH-1:0] data_in_fifo_2;
 wire signed [DATAPATH_WIDTH-1:0] data_out_fifo;
 wire                             Empty_intpol2;
 wire                             Afull_intpol2;
@@ -41,36 +43,41 @@ wire                             done;
 wire                             busy;
 wire        [8-1:0]              status_reg;
 
-wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_I;
-wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_Q;
-wire signed [DATAPATH_WIDTH-1:0] I_interp;
-wire signed [DATAPATH_WIDTH-1:0] Q_interp;
-wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_I;
-wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_Q;
-wire signed [DATAPATH_WIDTH-1:0] data_from_mem_I;
-wire signed [DATAPATH_WIDTH-1:0] data_from_mem_Q;
+wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_1;
+wire signed [DATAPATH_WIDTH-1:0] data_out_1;
+wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_1;
+wire signed [DATAPATH_WIDTH-1:0] data_from_mem_1;
 wire signed [MEM_ADDR_WIDTH-1:0] Write_addr_mem;
 wire signed [MEM_ADDR_WIDTH-1:0] Read_addr_mem;
 wire Write_Enable_mem;
-wire Empty_Indica_I;
-wire Empty_Indica_Q;
-wire Almost_Full_I;
-wire Almost_Full_Q;
+wire Empty_Indica_1;
+wire Almost_Full_1;
+
+
+`ifdef DUAL_DATAPATH
+    wire signed [DATAPATH_WIDTH-1:0] data_in_from_fifo_2;
+    wire signed [DATAPATH_WIDTH-1:0] data_out_2;
+    wire signed [DATAPATH_WIDTH-1:0] data_out_from_fifo_2;
+    wire signed [DATAPATH_WIDTH-1:0] data_from_mem_2;
+    wire Empty_Indica_2;
+    wire Almost_Full_2;
+`endif  
+
 wire Empty_fifo_out;
 wire Afull_fifo_in;
-wire [ADDR_WIDTH-1:0] M_addr;
-wire [ADDR_WIDTH-1:0] Y_addr;
+wire [SIGNAL_ADDR_WIDTH-1:0] M_addr;
+wire [SIGNAL_ADDR_WIDTH-1:0] Y_addr;
 wire WE_Y;                         // Write Enable Y Mem
 
 wire Almost_Empty_FIFO_in;
-wire [ADDR_WIDTH-1:0] ilen;
+wire [SIGNAL_ADDR_WIDTH-1:0] ilen;
 wire comp_len;
 wire done_sink;
-wire [ADDR_WIDTH-1:0] total_len;
+wire [SIGNAL_ADDR_WIDTH-1:0] total_len;
 
 
 reg [CONFIG_WIDTH-1:0] mem_config [0:4-1];
-reg [CONFIG_WIDTH-1:0] signal_len [0:1];
+reg [CONFIG_WIDTH-1:0] signal_len [0:1];   // size del TXT matlab gen
 reg [DELAY_WIDTH-1:0] delay_cc;
 reg nop;
 
@@ -79,8 +86,11 @@ integer fd;
 integer i;
 integer j;
 
-assign Empty_intpol2 = Empty_Indica_I | Empty_Indica_Q;
-assign Afull_intpol2 = Almost_Full_I | Almost_Full_Q;
+
+// assign Empty_intpol2 = Empty_Indica_1 | Empty_Indica_2;
+// assign Afull_intpol2 = Almost_Full_1 | Almost_Full_2;
+assign Empty_intpol2 = Empty_Indica_1;
+assign Afull_intpol2 = Almost_Full_1;
 
 assign done = status_reg[0];
 assign busy = status_reg[1];
@@ -90,7 +100,7 @@ assign config_reg[CONFIG_WIDTH*2-1:CONFIG_WIDTH]   = config_reg1;
 assign config_reg[CONFIG_WIDTH*3-1:CONFIG_WIDTH*2] = config_reg2;
 assign config_reg[CONFIG_WIDTH*4-1:CONFIG_WIDTH*3] = config_reg3;
 
-assign ilen = config_reg3[ADDR_WIDTH-1:0];
+assign ilen = config_reg3[SIGNAL_ADDR_WIDTH-1:0];
 assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total de senal de salida.
 // assign total_len = 'h80; 
 // assign total_len = 'd35; 
@@ -108,18 +118,18 @@ intpol2_D4_CORE#(
     .Empty_i           ( Empty_intpol2     ),
     .Afull_i           ( Afull_intpol2     ),
     .config_reg        ( config_reg        ),
-    .data_from_mem_I   ( data_from_mem_I   ),
-    .data_from_mem_Q   ( data_from_mem_Q   ),
-    .data_from_fifo_I  ( data_in_from_fifo_I  ),
-    .data_from_fifo_Q  ( data_in_from_fifo_Q  ),
+    .data_from_mem_1   ( data_from_mem_1   ),
+    .data_from_mem_2   ( data_from_mem_2   ),
+    .data_from_fifo_I  ( data_in_from_fifo_1  ),
+    .data_from_fifo_2  ( data_in_from_fifo_2  ),
     .Read_addr_mem     ( Read_addr_mem     ),
     .Write_addr_mem    ( Write_addr_mem    ),
     .Write_Enable_mem  ( Write_Enable_mem  ),
     .Write_Enable_fifo ( WE_fifo_out       ),
     .Read_Enable_fifo  ( RE_fifo_in        ),
     .status_reg        ( status_reg        ),
-    .I_interp          ( I_interp          ),
-    .Q_interp          ( Q_interp          )
+    .data_out_1          ( data_out_1          ),
+    .data_out_2          ( data_out_2          )
 );
 
 
@@ -130,20 +140,20 @@ M_mem#(
 )IF_mem_in_I(
     .clk           ( clk             ),
     .M_addr        ( Read_addr_mem   ),
-    .data_out      ( data_from_mem_I )
+    .data_out      ( data_from_mem_1 )
 );
 
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_M ( MEM_ADDR_WIDTH )
-)IF_mem_in_Q(
+)IF_mem_in_2(
     .clk           ( clk             ),
     .M_addr        ( Read_addr_mem   ),
-    .data_out      ( data_from_mem_Q )
+    .data_out      ( data_from_mem_2 )
 );
 
 Source_sim#(
-    .ADDR_WIDTH ( ADDR_WIDTH )
+    .ADDR_WIDTH ( SIGNAL_ADDR_WIDTH )
 )Source_sim(
     .clk   ( clk           ),
     .rst   ( rstn          ),
@@ -155,24 +165,24 @@ Source_sim#(
 
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
-    .MEM_SIZE_M ( ADDR_WIDTH     )
+    .MEM_SIZE_M ( SIGNAL_ADDR_WIDTH)
 )Signal_in_I(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
-    .data_out   ( data_in_fifo_I )
+    .data_out   ( data_in_fifo_1 )
 );
 
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
-    .MEM_SIZE_M ( ADDR_WIDTH     )
-)Signal_in_Q(
+    .MEM_SIZE_M ( SIGNAL_ADDR_WIDTH)
+)Signal_in_2(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
-    .data_out   ( data_in_fifo_Q )
+    .data_out   ( data_in_fifo_2 )
 );
 
 Sink_sim#(
-    .ADDR_WIDTH     ( ADDR_WIDTH ),
+    .ADDR_WIDTH     ( SIGNAL_ADDR_WIDTH ),
     .CONFIG_WIDTH   ( CONFIG_WIDTH  )
 )Sink_sim(
     .clk            ( clk            ),
@@ -190,22 +200,22 @@ Sink_sim#(
 
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH       ),
-    .MEM_SIZE_Y ( ADDR_WIDTH            )
+    .MEM_SIZE_Y ( SIGNAL_ADDR_WIDTH  )
 )Signal_out_I(
     .clk            ( clk                   ),
     .Y_addr         ( Y_addr                ),
     .Write_Enable_Y ( WE_Y                  ),
-    .data_in        ( data_out_from_fifo_I  )
+    .data_in        ( data_out_from_fifo_1  )
 );
 
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH       ),
-    .MEM_SIZE_Y ( ADDR_WIDTH            )
-)Signal_out_Q(
+    .MEM_SIZE_Y ( SIGNAL_ADDR_WIDTH  )
+)Signal_out_2(
     .clk            ( clk                   ),
     .Y_addr         ( Y_addr                ),
     .Write_Enable_Y ( WE_Y                  ),
-    .data_in        ( data_out_from_fifo_Q  )
+    .data_in        ( data_out_from_fifo_2  )
 );
 
 // Memoria de Interfaz de salida
@@ -217,17 +227,17 @@ Y_mem#(
     .clk            ( clk              ),
     .Y_addr         ( Write_addr_mem   ),
     .Write_Enable_Y ( Write_Enable_mem ),
-    .data_in        ( I_interp         )
+    .data_in        ( data_out_1         )
 );
 
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_Y ( MEM_ADDR_WIDTH )
-)IF_mem_out_Q(
+)IF_mem_out_2(
     .clk            ( clk              ),
     .Y_addr         ( Write_addr_mem   ),
     .Write_Enable_Y ( Write_Enable_mem ),
-    .data_in        ( Q_interp         )
+    .data_in        ( data_out_2         )
 );
 
 //-----------FIFOs de entrada-------------------------//
@@ -243,9 +253,9 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_in           ),    // High active
     .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	data_in_fifo_I       ),
-    .data_output__o   (	data_in_from_fifo_I  ),
-    .Empty_Indica_o   (	Empty_Indica_I       ),    // Empty FIFO indicator synchronized with Read clock
+    .data_input___i   (	data_in_fifo_1       ),
+    .data_output__o   (	data_in_from_fifo_1  ),
+    .Empty_Indica_o   (	Empty_Indica_1       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
     .Almost_Full__o   (	Afull_fifo_in        ),    
     .Almost_Empty_o   (	Almost_Empty_FIFO_in )
@@ -254,7 +264,7 @@ DC_FIFO_AF_AE #(
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,                  // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)                   // Address bits   ( )
-) FIFO_Q_in (
+) FIFO_2_in (
     .Write_clock__i   ( clk                  ),    // posedge active
     .Write_enable_i   (	WE_fifo_in           ),    // High active
     .rst_async_la_i   ( rstn		         ),    // Asynchronous reset low active for reader clock
@@ -262,9 +272,9 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_in           ),    // High active
     .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	data_in_fifo_Q       ),
-    .data_output__o   (	data_in_from_fifo_Q  ),
-    .Empty_Indica_o   (	Empty_Indica_Q       ),    // Empty FIFO indicator synchronized with Read clock
+    .data_input___i   (	data_in_fifo_2       ),
+    .data_output__o   (	data_in_from_fifo_2  ),
+    .Empty_Indica_o   (	Empty_Indica_2       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
     .Almost_Full__o   (	                     ),    
     .Almost_Empty_o   (		                 )
@@ -283,18 +293,18 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_out          ),    // High active
     .differenceAF_i   (	3'h2                 ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                 ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	I_interp             ),
-    .data_output__o   (	data_out_from_fifo_I ),
+    .data_input___i   (	data_out_1             ),
+    .data_output__o   (	data_out_from_fifo_1 ),
     .Empty_Indica_o   (	Empty_fifo_out       ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                 ),    // Set by the write clock and cleared by the reading clock
-    .Almost_Full__o   (	Almost_Full_I        ),    
+    .Almost_Full__o   (	Almost_Full_1        ),    
     .Almost_Empty_o   (		                 )
 );
 
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,              // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
-) FIFO_Q_out (
+) FIFO_2_out (
     .Write_clock__i   ( clk                   ),    // posedge active
     .Write_enable_i   (	WE_fifo_out           ),    // High active
     .rst_async_la_i   ( rstn		          ),    // Asynchronous reset low active for reader clock
@@ -302,11 +312,11 @@ DC_FIFO_AF_AE #(
     .Read_enable__i   ( RE_fifo_out           ),    // High active
     .differenceAF_i   (	3'h2                  ),    // Difference (memory locations) between AF & Full flag
     .differenceAE_i   (	3'h2                  ),    // Difference (memory locations) between AE & Empty flag
-    .data_input___i   (	Q_interp              ),
-    .data_output__o   (	data_out_from_fifo_Q  ),
+    .data_input___i   (	data_out_2              ),
+    .data_output__o   (	data_out_from_fifo_2  ),
     .Empty_Indica_o   (	     	              ),    // Empty FIFO indicator synchronized with Read clock
     .Full_Indicat_o   (		                  ),    // Set by the write clock and cleared by the reading clock
-    .Almost_Full__o   (	Almost_Full_Q         ),    
+    .Almost_Full__o   (	Almost_Full_2         ),    
     .Almost_Empty_o   (		                  )
 );
 
@@ -350,19 +360,19 @@ begin
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/signal_len.txt", signal_len);  
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_I.mem);
-    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_Q.mem);
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_2.mem);
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/config.txt", mem_config);
     // Filling Input IF Memory 
-    // for(j=0; j<2**MEM_ADDR_WIDTH; j=j+1) begin
-    //     IF_mem_in_I.mem[j] = Signal_in_I.mem[j];
-    //     IF_mem_in_Q.mem[j] = Signal_in_I.mem[j];
-    // end
+    for(j=0; j<2**MEM_ADDR_WIDTH; j=j+1) begin
+        IF_mem_in_I.mem[j] = Signal_in_I.mem[j];
+        IF_mem_in_2.mem[j] = Signal_in_I.mem[j];
+    end
     // Signal_in_I.mem[0] = 12'h6d9;
     // Signal_in_I.mem[1] = 12'h5fe;
     // Signal_in_I.mem[2] = 12'h4f0;
-    // Signal_in_Q.mem[0] = 12'h6d9;
-    // Signal_in_Q.mem[1] = 12'h5fe;
-    // Signal_in_Q.mem[2] = 12'h4f0;
+    // Signal_in_2.mem[0] = 12'h6d9;
+    // Signal_in_2.mem[1] = 12'h5fe;
+    // Signal_in_2.mem[2] = 12'h4f0;
 
     config_reg0 = mem_config[0];
     config_reg1 = mem_config[1];
@@ -409,12 +419,18 @@ end
 //         $fclose(fd);
 //         fd = $fopen("../interp_sine.txt","w");
 //         for(i=0; i<= total_len; i = i+1) begin
-//             $fdisplay(fd, "%h", Signal_out_Q.mem[i]);
+//             $fdisplay(fd, "%h", Signal_out_2.mem[i]);
 //         end
 //         $fclose(fd);
 //         $stop;
 //     end
 // end
+
+always @(done_sink) begin
+    if(done_sink) begin
+        $stop;
+    end
+end
 
 always @(DUT.Controlpath.FSM.state) begin
     if(DEBUGMODE == 1) begin
@@ -449,7 +465,7 @@ end
 
 always @(posedge clk) begin
     if(DUT.Write_Enable_fifo == 1)
-            $display("I_interp = %f    Q_interp = %f ", $signed($itor(DUT.I_interp*SF)), $signed($itor(DUT.Q_interp*SF)));
+            $display("data_out_1 = %f    data_out_2 = %f ", $signed($itor(DUT.data_out_1*SF)), $signed($itor(DUT.data_out_2*SF)));
     if(DUT.done == 1)
             $display("Done");  
 end
