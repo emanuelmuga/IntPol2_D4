@@ -13,22 +13,22 @@ add wave -noupdate /intpol2_D4_tb/DUT/Controlpath/next_state_logic/M_addr
 add wave -noupdate /intpol2_D4_tb/DUT/Afull_i
 add wave -noupdate /intpol2_D4_tb/DUT/Write_Enable_fifo
 add wave -noupdate /intpol2_D4_tb/DUT/Read_Enable_fifo
-add wave -noupdate -radix hexadecimal /intpol2_D4_tb/DUT/I_interp
-add wave -noupdate -radix hexadecimal /intpol2_D4_tb/DUT/Q_interp
+add wave -noupdate -radix hexadecimal /intpol2_D4_tb/DUT/data_out_1
+add wave -noupdate -radix hexadecimal /intpol2_D4_tb/DUT/data_out_2
 add wave -noupdate /intpol2_D4_tb/DUT/done
 add wave -noupdate /intpol2_D4_tb/DUT/busy
-add wave -noupdate /intpol2_D4_tb/DUT/Datapath_I/en_stream
-add wave -noupdate /intpol2_D4_tb/DUT/Datapath_I/op_1
+add wave -noupdate /intpol2_D4_tb/DUT/Datapath_1/en_stream
+add wave -noupdate /intpol2_D4_tb/DUT/Datapath_1/op_1
 add wave -noupdate /intpol2_D4_tb/DUT/Controlpath/FSM/state
 add wave -noupdate -divider FIFO_IN
-add wave -noupdate /intpol2_D4_tb/FIFO_I_in/Write_enable_i
-add wave -noupdate -radix hexadecimal /intpol2_D4_tb/FIFO_Q_in/Write_enable_i
-add wave -noupdate /intpol2_D4_tb/FIFO_I_in/Almost_Empty_o
+add wave -noupdate /intpol2_D4_tb/FIFO_1_in/Write_enable_i
+add wave -noupdate -radix hexadecimal /intpol2_D4_tb/FIFO_2_in/Write_enable_i
+add wave -noupdate /intpol2_D4_tb/FIFO_1_in/Almost_Empty_o
 add wave -noupdate -divider FIFO_OUT
-add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_tb/FIFO_I_in/data_output__o
-add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_tb/FIFO_Q_in/data_output__o
-add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 /intpol2_D4_tb/DUT/I_interp
-add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 /intpol2_D4_tb/DUT/Q_interp
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_tb/FIFO_1_in/data_output__o
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 -radix decimal /intpol2_D4_tb/FIFO_2_in/data_output__o
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 /intpol2_D4_tb/DUT/data_out_1
+add wave -noupdate -format Analog-Step -height 88 -max 2047.0 -min -2048.0 /intpol2_D4_tb/DUT/data_out_2
 add wave -noupdate -format Analog-Step -height 88 -label {Saturated signal} -max 2047.0 -min -2048.0 /intpol2_D4_tb/DUT/Datapath_Q/data_reg
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {7210000 ps} 0} {{Cursor 2} {7182017 ps} 0}

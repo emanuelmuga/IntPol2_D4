@@ -72,17 +72,17 @@ module intpol2_D4_CORE #(
     output wire                             Write_Enable_fifo,  
     output wire                             Read_Enable_fifo,   
     output wire        [8-1:0]              status_reg,         
-    output wire signed [DATAPATH_WIDTH-1:0] data_out_1,           // Result I  
 `ifdef DUAL_DATAPATH 
-    output wire signed [DATAPATH_WIDTH-1:0] data_out_2            // Result Q   
+    output wire signed [DATAPATH_WIDTH-1:0] data_out_2,            // Result Q   
 `endif                                         
+    output wire signed [DATAPATH_WIDTH-1:0] data_out_1           // Result I  
 );
 
 //-----------------------Connection signals--------------------//
 wire                       mode;                               // Selección de modo Accel./Stream  
 wire  [CONFIG_WIDTH-1:0]   ilen;
 wire  [DATAPATH_WIDTH-1:0] iX;  
-wire  [DATAPATH_WIDTH-1:0] iX2;  ;
+wire  [DATAPATH_WIDTH-1:0] iX2;  
 wire  [CONFIG_WIDTH-1:0]   config_reg0;
 wire  [CONFIG_WIDTH-1:0]   config_reg1;
 wire  [CONFIG_WIDTH-1:0]   config_reg2;
@@ -92,7 +92,7 @@ wire  [DATAPATH_WIDTH-1:0] data_1;
 
 `ifdef DUAL_DATAPATH
     wire  [DATAPATH_WIDTH-1:0] data_to_process_2;                // Select data to process MEM/FIFO
-    wire  [DATAPATH_WIDTH-1:0] data_2     
+    wire  [DATAPATH_WIDTH-1:0] data_2;     
 `endif
 
 wire                       en_sum;                           // enable del cnt y de la multi por sumatoria.
@@ -144,8 +144,9 @@ assign status_reg[5] = bypass;
 
 //--------------------------Input Muxes-----------------------//
 assign data_to_process_1 = (mode)  ? data_from_fifo_1    : data_from_mem_1;
+
 `ifdef DUAL_DATAPATH
-    assign data_to_process_2 = (mode)  ? data_from_fifo_2    : data_from_mem_2;
+assign data_to_process_2 = (mode)  ? data_from_fifo_2    : data_from_mem_2;
 `endif
 //--------------------------Output Muxes-----------------------//
 assign Read_addr_mem     = M_addr;
@@ -158,8 +159,8 @@ assign Read_Enable_fifo  = (mode)  ? Read_Enable         : 1'b0;
 assign data_out_1        = bypass  ? 
                            (mode)  ? data_from_fifo_1    : data_from_mem_1 
                                                          : data_1;
-`ifdef 
-    assign data_out_2    = bypass  ? 
+`ifdef DUAL_DATAPATH
+ assign data_out_2        = bypass  ? 
                            (mode)  ? data_from_fifo_2    : data_from_mem_2 
                                                          : data_2;   
 `endif                                                         

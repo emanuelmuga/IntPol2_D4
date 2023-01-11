@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-`define DUAL_DATAPATH 1				// <--- Descomentar para activar el doble datapath
+`define DUAL_DATAPATH 1				// <--- Descomentar para activar el doble datapath	
 
 module intpol2_D4_tb();
 
@@ -12,8 +12,9 @@ localparam   FIFO_ADDR_WIDTH   = 3;
 localparam   MEM_ADDR_WIDTH    = 4;                //2**4
 localparam   SIGNAL_ADDR_WIDTH = $clog2(2**20);    // Tamaño de memoria de almacenamiento de la señal
 localparam   SF                = 2.0**-(M_bits);   //scaling factor (printing matters)
-
 localparam   DELAY_WIDTH       = 13;
+
+localparam   DELAY_MODE        = 0;
 localparam   DEBUGMODE         = 0;   //~OFF/ON (imprime las operaciones en Modelsim)
 localparam   BYPASS            = 0;   //bypass   ~OFF/ON           
 
@@ -106,30 +107,32 @@ assign total_len = signal_len[0]*(ilen)-(2*ilen);  // Calculo del tamano total d
 // assign total_len = 'd35; 
 
 intpol2_D4_CORE#(
-    .CONFIG_WIDTH      ( CONFIG_WIDTH   ),
-    .DATAPATH_WIDTH    ( DATAPATH_WIDTH ),
-    .N_bits            ( N_bits         ),
-    .M_bits            ( M_bits         ),
-    .MEM_ADDR_WIDTH    ( MEM_ADDR_WIDTH )
+    .CONFIG_WIDTH      ( CONFIG_WIDTH       ),
+    .DATAPATH_WIDTH    ( DATAPATH_WIDTH     ),
+    .N_bits            ( N_bits             ),
+    .M_bits            ( M_bits             ),
+    .MEM_ADDR_WIDTH    ( MEM_ADDR_WIDTH     )
 )DUT(
-    .clk               ( clk               ),
-    .rstn              ( rstn              ),
-    .start             ( start             ),
-    .Empty_i           ( Empty_intpol2     ),
-    .Afull_i           ( Afull_intpol2     ),
-    .config_reg        ( config_reg        ),
-    .data_from_mem_1   ( data_from_mem_1   ),
-    .data_from_mem_2   ( data_from_mem_2   ),
-    .data_from_fifo_I  ( data_in_from_fifo_1  ),
-    .data_from_fifo_2  ( data_in_from_fifo_2  ),
-    .Read_addr_mem     ( Read_addr_mem     ),
-    .Write_addr_mem    ( Write_addr_mem    ),
-    .Write_Enable_mem  ( Write_Enable_mem  ),
-    .Write_Enable_fifo ( WE_fifo_out       ),
-    .Read_Enable_fifo  ( RE_fifo_in        ),
-    .status_reg        ( status_reg        ),
-    .data_out_1          ( data_out_1          ),
-    .data_out_2          ( data_out_2          )
+    .clk               ( clk                ),
+    .rstn              ( rstn               ),
+    .start             ( start              ),
+    .Empty_i           ( Empty_intpol2      ),
+    .Afull_i           ( Afull_intpol2      ),
+    .config_reg        ( config_reg         ),
+    .data_from_mem_1   ( data_from_mem_1    ),
+    .data_from_fifo_1  ( data_in_from_fifo_1),
+    .Read_addr_mem     ( Read_addr_mem      ),
+    .Write_addr_mem    ( Write_addr_mem     ),
+    .Write_Enable_mem  ( Write_Enable_mem   ),
+    .Write_Enable_fifo ( WE_fifo_out        ),
+    .Read_Enable_fifo  ( RE_fifo_in         ),
+    .status_reg        ( status_reg         ),
+`ifdef DUAL_DATAPATH
+    .data_from_fifo_2  ( data_in_from_fifo_2),
+    .data_from_mem_2   ( data_from_mem_2    ),
+    .data_out_2        ( data_out_2         ),
+`endif
+    .data_out_1        ( data_out_1         )
 );
 
 
@@ -137,7 +140,7 @@ intpol2_D4_CORE#(
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_M ( MEM_ADDR_WIDTH )
-)IF_mem_in_I(
+)IF_mem_in_1(
     .clk           ( clk             ),
     .M_addr        ( Read_addr_mem   ),
     .data_out      ( data_from_mem_1 )
@@ -166,7 +169,7 @@ Source_sim#(
 M_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_M ( SIGNAL_ADDR_WIDTH)
-)Signal_in_I(
+)Signal_in_1(
     .clk        ( clk            ),
     .M_addr     ( M_addr         ),
     .data_out   ( data_in_fifo_1 )
@@ -223,7 +226,7 @@ Y_mem#(
 Y_mem#(
     .DATA_WIDTH ( DATAPATH_WIDTH ),
     .MEM_SIZE_Y ( MEM_ADDR_WIDTH )
-)IF_mem_out_I(
+)IF_mem_out_1(
     .clk            ( clk              ),
     .Y_addr         ( Write_addr_mem   ),
     .Write_Enable_Y ( Write_Enable_mem ),
@@ -245,7 +248,7 @@ Y_mem#(
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,                      // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)                   // Address bits   ( )
-) FIFO_I_in (
+) FIFO_1_in (
     .Write_clock__i   ( clk                  ),    // posedge active
     .Write_enable_i   (	WE_fifo_in           ),    // High active
     .rst_async_la_i   ( rstn		         ),    // Asynchronous reset low active for reader clock
@@ -261,6 +264,7 @@ DC_FIFO_AF_AE #(
     .Almost_Empty_o   (	Almost_Empty_FIFO_in )
 );
 
+`ifdef DUAL_DATAPATH
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,                  // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)                   // Address bits   ( )
@@ -279,6 +283,7 @@ DC_FIFO_AF_AE #(
     .Almost_Full__o   (	                     ),    
     .Almost_Empty_o   (		                 )
 );
+`endif
 
 //-----------FIFOs de Salida-------------------------//
 
@@ -301,6 +306,7 @@ DC_FIFO_AF_AE #(
     .Almost_Empty_o   (		                 )
 );
 
+`ifdef DUAL_DATAPATH
 DC_FIFO_AF_AE #(
     .DATA_WIDTH(DATAPATH_WIDTH) ,              // Datawidth of data
     .ADDR_WIDTH(FIFO_ADDR_WIDTH)               // Address bits   ( )
@@ -319,6 +325,7 @@ DC_FIFO_AF_AE #(
     .Almost_Full__o   (	Almost_Full_2         ),    
     .Almost_Empty_o   (		                  )
 );
+`endif
 
 
 initial
@@ -359,17 +366,23 @@ initial
 begin 
     $display("============= Interpolador Cuadratico Design IV v1.0 IQ ============");
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/signal_len.txt", signal_len);  
-    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_I.mem);
+    $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputCos.txt", Signal_in_1.mem);
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/OutputSine.txt", Signal_in_2.mem);
     $readmemh("C:/Users/emanu/Documents/HDL/IntPol2_D4/mods/id00001006/hdl/sim/config.txt", mem_config);
     // Filling Input IF Memory 
-    for(j=0; j<2**MEM_ADDR_WIDTH; j=j+1) begin
-        IF_mem_in_I.mem[j] = Signal_in_I.mem[j];
-        IF_mem_in_2.mem[j] = Signal_in_I.mem[j];
-    end
-    // Signal_in_I.mem[0] = 12'h6d9;
-    // Signal_in_I.mem[1] = 12'h5fe;
-    // Signal_in_I.mem[2] = 12'h4f0;
+
+    for(i = 0; i <= 49988; i = i + 1)begin	// <--- Longitud del archivo txt
+	
+	    Signal_in_1.mem[i] = {Signal_in_1.mem[i][11:0],{(DATAPATH_WIDTH-12){1'd0}}}; // Ajustar al formato punto fijo del archivo txt de la entrada de datos
+		
+    `ifdef DUAL_DATAPATH 
+         Signal_in_2.mem[i] = {Signal_in_2.mem[i][11:0],{(DATAPATH_WIDTH-12){1'd0}}}; // Ajustar al formato punto fijo del archivo txt de la entrada de datos
+     `endif
+	end
+
+    // Signal_in_1.mem[0] = 12'h6d9;
+    // Signal_in_1.mem[1] = 12'h5fe;
+    // Signal_in_1.mem[2] = 12'h4f0;
     // Signal_in_2.mem[0] = 12'h6d9;
     // Signal_in_2.mem[1] = 12'h5fe;
     // Signal_in_2.mem[2] = 12'h4f0;
@@ -392,22 +405,26 @@ begin
     #10;
     en = 1;
     start = 0;
-    #($urandom%(2**DELAY_WIDTH)*10);
-    DO_delay($urandom%(2**DELAY_WIDTH));
-    #($urandom%(2**DELAY_WIDTH)*10);
-    DO_delay($urandom%(2**DELAY_WIDTH));
-    #($urandom%(2**DELAY_WIDTH)*10);
-    DO_delay($urandom%(2**DELAY_WIDTH));
-    #($urandom%(2**DELAY_WIDTH)*10);
-    #10;
-    start = 1'b1;
-    #10;
-    start = 1'b0;
-    #($urandom%(2**DELAY_WIDTH)*10); 
-    fork 
-    DO_delay(1000);
-    #(500*10) DO_start(); 
-    join
+    if (DELAY_MODE==1) begin
+        #($urandom%(2**DELAY_WIDTH)*10);
+        DO_delay($urandom%(2**DELAY_WIDTH));
+        #($urandom%(2**DELAY_WIDTH)*10);
+        DO_delay($urandom%(2**DELAY_WIDTH));
+        #($urandom%(2**DELAY_WIDTH)*10);
+        DO_delay($urandom%(2**DELAY_WIDTH));
+        #($urandom%(2**DELAY_WIDTH)*10);
+
+        #10;
+        start = 1'b1;
+        #10;
+        start = 1'b0;
+
+        #($urandom%(2**DELAY_WIDTH)*10); 
+        fork 
+        DO_delay(1000);
+        #(500*10) DO_start(); 
+        join
+    end
 end
 
 // always @(done_sink) begin
@@ -437,7 +454,7 @@ always @(DUT.Controlpath.FSM.state) begin
         if(DUT.Controlpath.FSM.state == 3'h1) begin
             $display("-------------------------Config----------------------------------");
             $display("total len: %s", total_len);
-            $display("x: %f, x2: %f, paso: %d", $itor(DUT.Datapath_I.x*SF), $itor(DUT.Datapath_I.x2*SF), $itor(DUT.Controlpath.next_state_logic.ilen));
+            $display("x: %f, x2: %f, paso: %d", $itor(DUT.Datapath_1.x*SF), $itor(DUT.Datapath_1.x2*SF), $itor(DUT.Controlpath.next_state_logic.ilen));
             if(config_reg0[0] == 0) begin
                 $display("Bypass = OFF");
             end
@@ -445,18 +462,18 @@ always @(DUT.Controlpath.FSM.state) begin
                 $display("Bypass = ON");
             end
         end
-        if(DUT.Datapath_I.op_1 == 1) begin
+        if(DUT.Datapath_1.op_1 == 1) begin
             $display("-----------------------------------------------------------------");
-            $display("m0: %f, m1: %f, m2: %f", $itor(DUT.Datapath_I.m0*SF), $itor(DUT.Datapath_I.m1*SF), $itor(DUT.Datapath_I.m2*SF));
+            $display("m0: %f, m1: %f, m2: %f", $itor(DUT.Datapath_1.m0*SF), $itor(DUT.Datapath_1.m1*SF), $itor(DUT.Datapath_1.m2*SF));
             $display("------------------Valores intermedios----------------------------");
-            $display("m0 + m2     = %f", $itor(DUT.Datapath_I.m2_m0*SF));
-            $display("(m0 + m2)/2 = %f", $itor(DUT.Datapath_I.m2_m0_div2*SF));
-            $display("2*m1        = %f", $itor(DUT.Datapath_I.t2_m1*SF));
-            $display("2*m1 - m0   = %f", $itor(DUT.Datapath_I.t2_m1_m0*SF));
+            $display("m0 + m2     = %f", $itor(DUT.Datapath_1.m2_m0*SF));
+            $display("(m0 + m2)/2 = %f", $itor(DUT.Datapath_1.m2_m0_div2*SF));
+            $display("2*m1        = %f", $itor(DUT.Datapath_1.t2_m1*SF));
+            $display("2*m1 - m0   = %f", $itor(DUT.Datapath_1.t2_m1_m0*SF));
             $display("----------------------Coeficientes-------------------------------");
-            $display("p0 = %f", $itor(DUT.Datapath_I.m0*SF));
-            $display("p1 = %f", $itor(DUT.Datapath_I.p1*SF));
-            $display("p2 = %f", $itor(DUT.Datapath_I.p2*SF));
+            $display("p0 = %f", $itor(DUT.Datapath_1.m0*SF));
+            $display("p1 = %f", $itor(DUT.Datapath_1.p1*SF));
+            $display("p2 = %f", $itor(DUT.Datapath_1.p2*SF));
             $display("-----------------------------------------------------------------");
         end
     end
@@ -465,7 +482,11 @@ end
 
 always @(posedge clk) begin
     if(DUT.Write_Enable_fifo == 1)
-            $display("data_out_1 = %f    data_out_2 = %f ", $signed($itor(DUT.data_out_1*SF)), $signed($itor(DUT.data_out_2*SF)));
+            $display("data_out_1 = %f", $signed($itor(DUT.data_out_1*SF)));
+`ifdef DUAL_DATAPATH 
+    if(DUT.Write_Enable_fifo == 1)
+            $display("data_out_1 = %f", $signed($itor(DUT.data_out_1*SF)));
+`endif
     if(DUT.done == 1)
             $display("Done");  
 end
